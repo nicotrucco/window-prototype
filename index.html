@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>Window — look outside</title>
+
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#060606">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Window">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" href="icons/icon-180.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..600;1,9..144,400..600&family=Hanken+Grotesk:wght@300..700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<!-- ============ SPLASH ============ -->
+<section id="splash" class="screen active" role="button" aria-label="open window">
+  <div class="splash-inner">
+    <h1 class="wordmark big">wind<span class="mini-o" aria-hidden="true"><i></i><i></i></span>w</h1>
+    <p class="tagline">look outside.</p>
+    <p class="hint">tap anywhere</p>
+  </div>
+</section>
+
+<!-- ============ THE WINDOW MOMENT ============ -->
+<section id="moment" class="screen">
+  <header class="moment-head">
+    <span class="brandline">Window · look outside</span>
+  </header>
+
+  <div class="frame-wrap">
+    <div class="winframe hero">
+      <div class="glass">
+        <video id="cam" autoplay playsinline muted></video>
+        <img id="freeze" alt="">
+        <div class="mull mull-v"></div>
+        <div class="mull mull-h"></div>
+        <div class="scrim" id="scrim"></div>
+        <div class="phrase" id="phrase">
+          <svg class="spark" id="spark" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 0 L14.2 9.8 L24 12 L14.2 14.2 L12 24 L9.8 14.2 L0 12 L9.8 9.8 Z"/>
+          </svg>
+          <span id="phrase-text"></span>
+        </div>
+        <div class="cam-error" id="cam-error">
+          <p>window needs the camera to open.</p>
+          <p class="sub">allow camera access, then try again.</p>
+          <button class="btn btn-ghost small" id="btn-retry-cam">try again</button>
+        </div>
+        <div class="shade" id="shade"></div>
+      </div>
+    </div>
+    <p class="stamp" id="stamp"></p>
+  </div>
+
+  <div class="controls" id="controls-capture">
+    <button class="btn btn-primary" id="btn-capture">Take a photo</button>
+    <button class="btn btn-ghost" id="btn-skip">Skip today</button>
+    <button class="textbtn" id="btn-flip">flip camera</button>
+  </div>
+
+  <div class="controls hidden" id="controls-after">
+    <p class="saved-note">saved to your archive · stays on this device</p>
+    <button class="btn btn-primary" id="btn-continue">Continue</button>
+    <div class="row">
+      <button class="btn btn-ghost" id="btn-done">Done</button>
+      <button class="textbtn" id="btn-retake">retake</button>
+    </div>
+  </div>
+
+  <div class="pickbar hidden" id="pickbar">
+    <p class="pickbar-label">pick your line</p>
+    <div class="pickbar-chips" id="pickbar-chips"></div>
+  </div>
+</section>
+
+<!-- ============ HOME ============ -->
+<section id="home" class="screen">
+  <header class="home-head">
+    <h1 class="wordmark">wind<span class="mini-o" aria-hidden="true"><i></i><i></i></span>w</h1>
+    <button class="iconbtn" id="btn-settings" aria-label="settings">···</button>
+  </header>
+
+  <div class="stats">
+    <p class="streak"><span id="streak-n">0</span><span class="streak-label">day streak</span></p>
+    <p class="total" id="total-n">0 windows opened</p>
+    <p class="persona-now" id="persona-now">calm</p>
+  </div>
+
+  <div class="home-actions">
+    <button class="btn btn-primary wide" id="btn-open">Open a window</button>
+    <button class="btn btn-ghost wide" id="btn-archive">Archive</button>
+  </div>
+
+  <p class="privacy-line">photos stay on this device. always.</p>
+</section>
+
+<!-- ============ ARCHIVE ============ -->
+<section id="archive" class="screen">
+  <header class="page-head">
+    <button class="iconbtn" id="btn-archive-back" aria-label="back">←</button>
+    <h2>your windows</h2>
+  </header>
+  <div class="grid" id="archive-grid"></div>
+  <p class="empty hidden" id="archive-empty">no windows yet — go look outside.</p>
+</section>
+
+<!-- ============ DETAIL ============ -->
+<div class="overlay hidden" id="detail">
+  <button class="iconbtn close" id="btn-detail-close" aria-label="close">×</button>
+  <div class="winframe detail-frame">
+    <div class="glass">
+      <img id="detail-img" alt="">
+      <div class="mull mull-v"></div>
+      <div class="mull mull-h"></div>
+    </div>
+  </div>
+  <p class="detail-phrase" id="detail-phrase"></p>
+  <p class="detail-meta" id="detail-meta"></p>
+  <div class="row center">
+    <button class="btn btn-ghost small" id="btn-share">share</button>
+    <button class="textbtn danger" id="btn-delete">delete</button>
+  </div>
+</div>
+
+<!-- ============ SETTINGS SHEET ============ -->
+<div class="sheet-back hidden" id="sheet-back"></div>
+<div class="sheet" id="settings-sheet">
+  <div class="sheet-handle"></div>
+  <h3>settings</h3>
+
+  <p class="set-label">persona</p>
+  <div class="chips" id="persona-chips"></div>
+
+  <p class="set-label">phrase</p>
+  <div class="chips" id="mode-chips">
+    <button class="chip" data-mode="auto">auto · reads the scene</button>
+    <button class="chip" data-mode="manual">director · you choose</button>
+  </div>
+  <div id="manual-box" class="hidden">
+    <input type="text" id="manual-phrase" placeholder="write the next line…" maxlength="60">
+    <div class="chips small-chips" id="suggest-chips"></div>
+  </div>
+
+  <p class="set-label">continue to</p>
+  <div class="chips" id="app-chips"></div>
+
+  <p class="set-label">archive</p>
+  <button class="textbtn danger" id="btn-clear">clear all windows</button>
+
+  <p class="version">window prototype · everything stays on this device</p>
+</div>
+
+<script src="js/phrases.js"></script>
+<script src="js/classify.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
