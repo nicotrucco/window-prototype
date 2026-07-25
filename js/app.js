@@ -715,13 +715,33 @@
   });
 
   /* ---------- boot ---------- */
+  const BUILD = "v5";
+
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("sw.js").catch(() => {});
+    /* updateViaCache:"none" stops Safari serving a stale sw.js out of the HTTP
+       cache, which is how an installed PWA ends up never noticing a new build */
+    navigator.serviceWorker.register("sw.js", { updateViaCache: "none" })
+      .then(reg => reg.update())
+      .catch(() => {});
+
+    /* when a new worker takes over, reload once so the page isn't left running
+       half the old build — guarded so it can't loop */
+    let reloaded = false;
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (reloaded) return;
+      reloaded = true;
+      location.reload();
+    });
   }
+
   setMode(readMode());
   paintScene();
   refreshHud();
   startTick();
+
+  /* so "is this the new build?" is answerable at a glance instead of guessed */
+  $("#build-stamp").textContent = `${BUILD} · ${state.mode}`;
+  console.log("[window] build " + BUILD + " · mode " + state.mode);
 
   /* open straight into the live window; the veil only stays up if the browser
      insists on a gesture, and then one tap does it */

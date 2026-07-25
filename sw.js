@@ -1,7 +1,20 @@
-/* Window — service worker: cache the shell, keep fonts/model available offline-ish */
-/* Bump CACHE on every deploy — an installed PWA will happily serve the old shell
-   forever otherwise, and you'll film the previous build without noticing. */
-const CACHE = "window-v4-blocker";
+/* Window — service worker.
+
+   NETWORK-FIRST for our own files, cache only as the offline fallback.
+
+   This used to be cache-first, which meant a freshly deployed build wouldn't
+   appear until at least the second launch — and on an installed iOS PWA often
+   not even then, because Safari happily serves a stale sw.js from the HTTP
+   cache and so never notices there's a new worker at all. For a filming rig
+   that's the worst possible failure: you shoot the previous build without
+   realising. Fresh code every time you're online is worth the round trip;
+   offline still works off the cache below.
+
+   Registered with updateViaCache:"none" (see js/app.js) so sw.js itself is
+   never served from the HTTP cache. */
+
+const BUILD = "v5";
+const CACHE = "window-" + BUILD;
 const CORE = [
   "./", "./index.html",
   "./css/app.css",
@@ -13,38 +26,52 @@ const CORE = [
 ];
 
 self.addEventListener("install", e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE)).then(() => self.skipWaiting()));
+  e.waitUntil(
+    caches.open(CACHE)
+      .then(c => c.addAll(CORE))
+      .catch(() => {})           /* a single 404 must not block activation */
+      .then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener("activate", e => {
   e.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-    ).then(() => self.clients.claim())
+    caches.keys()
+      .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
+      .then(() => self.clients.claim())
   );
 });
 
+self.addEventListener("message", e => {
+  if (e.data === "skip-waiting") self.skipWaiting();
+});
+
 self.addEventListener("fetch", e => {
-  const url = new URL(e.request.url);
   if (e.request.method !== "GET") return;
+  const url = new URL(e.request.url);
 
   if (url.origin === location.origin) {
-    /* shell: cache-first, refresh in background */
+    /* ours: network first, fall back to cache when offline */
     e.respondWith(
-      caches.match(e.request).then(hit => {
-        const net = fetch(e.request).then(res => {
-          if (res.ok) caches.open(CACHE).then(c => c.put(e.request, res.clone()));
+      fetch(e.request)
+        .then(res => {
+          if (res && res.ok) {
+            const copy = res.clone();
+            caches.open(CACHE).then(c => c.put(e.request, copy));
+          }
           return res;
-        }).catch(() => hit);
-        return hit || net;
-      })
+        })
+        .catch(() => caches.match(e.request).then(hit => hit || caches.match("./index.html")))
     );
   } else {
-    /* fonts + tfjs CDN: stale-while-revalidate */
+    /* fonts + tfjs CDN: stale-while-revalidate, they don't change under us */
     e.respondWith(
       caches.match(e.request).then(hit => {
         const net = fetch(e.request).then(res => {
-          caches.open(CACHE).then(c => c.put(e.request, res.clone()));
+          if (res && res.ok) {
+            const copy = res.clone();
+            caches.open(CACHE).then(c => c.put(e.request, copy));
+          }
           return res;
         }).catch(() => hit);
         return hit || net;
