@@ -1,7 +1,7 @@
 /* Window — service worker: cache the shell, keep fonts/model available offline-ish */
 /* Bump CACHE on every deploy — an installed PWA will happily serve the old shell
    forever otherwise, and you'll film the previous build without noticing. */
-const CACHE = "window-v3-frame";
+const CACHE = "window-v4-blocker";
 const CORE = [
   "./", "./index.html",
   "./css/app.css",

@@ -37,8 +37,14 @@
        index.html?mode=window   ·   index.html#window                        */
   function readMode() {
     const q = new URLSearchParams(location.search).get("mode");
+    if (q === "window" || q === "app") return q;
     const h = location.hash.replace("#", "");
-    return (q === "window" || h === "window") ? "window" : "app";
+    if (h === "window" || h === "app") return h;
+    /* Default depends on where it's running. The deployed build is the filming
+       rig on the phone, so it lands straight in the window moment. localhost is
+       the workbench, so it opens the whole app. ?mode= overrides either way. */
+    const local = /^(localhost|127\.0\.0\.1|\[::1\]|.*\.local)$/i.test(location.hostname);
+    return local ? "app" : "window";
   }
   function setMode(m) {
     state.mode = m;
@@ -165,14 +171,29 @@
     state.wakeLock = null;
   }
 
-  /* ---------- opening ---------- */
-  async function openWindow() {
+  /* ---------- opening ----------
+     Try to go straight into the live window. Browsers only demand a user
+     gesture for the camera when permission hasn't been granted yet, so on
+     every run after the first this opens with no tap at all — which is the
+     whole point of the blocker: it opens ON you, it doesn't ask.
+
+     (The old check used navigator.permissions.query({name:"camera"}), which
+     Safari doesn't implement — it rejects, so the veil never lifted.) */
+  async function openWindow(fromTap) {
     if (state.opened) return;
+
+    const ok = await startCamera(true);
+    if (!ok && !fromTap) {
+      /* needs a gesture — put it back the way it was and wait for the tap */
+      $("#shade").classList.remove("open");
+      $("#cam-error").classList.remove("show");
+      return;
+    }
+
     state.opened = true;
     $("#veil").classList.add("gone");
     $("#hud").classList.add("up");
     resetCaptureUI();
-    await startCamera(true);
     window.warmClassifier();
     refreshHud();
   }
@@ -629,7 +650,7 @@
   function closeSettings() { $("#sheet-back").classList.add("hidden"); $("#settings-sheet").classList.remove("open"); }
 
   /* ---------- wire up ---------- */
-  $("#veil").onclick = openWindow;
+  $("#veil").onclick = () => openWindow(true);
 
   $("#btn-capture").onclick = capture;
   /* skip is the friendly part of friendly friction: it always lets you through */
@@ -702,9 +723,7 @@
   refreshHud();
   startTick();
 
-  /* try to open straight into the live window; if the browser demands a
-     gesture for the camera, the veil stays up and one tap does it */
-  navigator.permissions?.query({ name: "camera" })
-    .then(p => { if (p.state === "granted") openWindow(); })
-    .catch(() => {});
+  /* open straight into the live window; the veil only stays up if the browser
+     insists on a gesture, and then one tap does it */
+  openWindow(false);
 })();

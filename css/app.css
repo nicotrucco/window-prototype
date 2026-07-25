@@ -210,11 +210,13 @@ html, body {
 .core {
   position:fixed;
   top:50%; left:50%;
-  transform:translate(-50%, -50%);
   display:flex; flex-direction:column;
   align-items:center; gap:16px;
   z-index:12;
-  animation:fadeup .8s var(--ease) both;
+  /* the centring lives in the keyframes. a plain `transform:translate(-50%,-50%)`
+     here gets overwritten by the animation's own transform under fill-mode both,
+     which drops the box to the bottom-right of centre. */
+  animation:fadeup-centre .8s var(--ease) both;
 }
 .sq {
   width:clamp(128px, 38vw, 168px);
@@ -568,6 +570,11 @@ body.shot #core-app, body.shot #core-window { display:none; }
 
 /* ============ motion ============ */
 @keyframes fadeup { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+/* same rise, but carrying the -50%/-50% centring through every frame */
+@keyframes fadeup-centre {
+  from { opacity:0; transform:translate(-50%, calc(-50% + 16px)); }
+  to   { opacity:1; transform:translate(-50%, -50%); }
+}
 @keyframes fadein { from { opacity:0; } to { opacity:1; } }
 @keyframes pulse  { 0%,100% { opacity:.25; } 50% { opacity:.7; } }
 @keyframes sparkle {
