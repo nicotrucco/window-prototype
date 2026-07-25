@@ -22,97 +22,157 @@
 </head>
 <body>
 
-<!-- ============ SPLASH ============ -->
-<section id="splash" class="screen active" role="button" aria-label="open window">
-  <div class="splash-inner">
-    <h1 class="wordmark big">wind<span class="mini-o" aria-hidden="true"><i></i><i></i></span>w</h1>
-    <p class="tagline">look outside.</p>
-    <p class="hint">tap anywhere</p>
-  </div>
-</section>
-
-<!-- ============ THE WINDOW MOMENT ============ -->
-<section id="moment" class="screen">
-  <header class="moment-head">
-    <span class="brandline">Window · look outside</span>
-  </header>
-
-  <div class="frame-wrap">
-    <div class="winframe hero">
-      <div class="glass">
-        <video id="cam" autoplay playsinline muted></video>
-        <img id="freeze" alt="">
-        <div class="mull mull-v"></div>
-        <div class="mull mull-h"></div>
-        <div class="scrim" id="scrim"></div>
-        <div class="phrase" id="phrase">
-          <svg class="spark" id="spark" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M12 0 L14.2 9.8 L24 12 L14.2 14.2 L12 24 L9.8 14.2 L0 12 L9.8 9.8 Z"/>
-          </svg>
-          <span id="phrase-text"></span>
-        </div>
-        <div class="cam-error" id="cam-error">
-          <p>window needs the camera to open.</p>
-          <p class="sub">allow camera access, then try again.</p>
-          <button class="btn btn-ghost small" id="btn-retry-cam">try again</button>
-        </div>
-        <div class="shade" id="shade"></div>
+<!-- ============================================================
+     THE STAGE — always on. the phone IS the window.
+     camera lives behind white-wood framing for the whole session.
+     ============================================================ -->
+<div id="stage">
+  <div class="window">
+    <div class="glass">
+      <video id="cam" autoplay playsinline muted></video>
+      <img id="freeze" alt="">
+      <div class="shade" id="shade"></div>
+      <div class="flash" id="flash"></div>
+      <div class="cam-error" id="cam-error">
+        <p>window needs the camera to open.</p>
+        <p class="sub">allow camera access, then try again.</p>
+        <button class="btn glass-btn small" id="btn-retry-cam">try again</button>
       </div>
     </div>
-    <p class="stamp" id="stamp"></p>
+
+    <!-- a real window, photographed. the panes are keyed out so the camera
+         shows through. frame-open has the mullions cut away too, so crossfading
+         between the two is how the window opens up. -->
+    <img class="frame-img" id="frame-full" src="img/frame-tall.png" alt="" aria-hidden="true">
+    <img class="frame-img open" id="frame-open" src="img/frame-open-tall.png" alt="" aria-hidden="true">
+
+    <!-- above the timber, so the mullions never cut the line in half -->
+    <div class="scrim" id="scrim"></div>
+    <div class="phrase" id="phrase">
+      <svg class="spark" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 0 L14.2 9.8 L24 12 L14.2 14.2 L12 24 L9.8 14.2 L0 12 L9.8 9.8 Z"/>
+      </svg>
+      <span id="phrase-text"></span>
+    </div>
+  </div>
+</div>
+
+<!-- ============ OPENING (first tap — camera needs a gesture) ============ -->
+<div class="veil" id="veil">
+  <div class="veil-inner">
+    <h1 class="wordmark big">wind<span class="mini-o" aria-hidden="true"><i></i><i></i></span>w</h1>
+    <p class="tagline">look outside.</p>
+    <p class="hint">tap to open</p>
+  </div>
+</div>
+
+<!-- ============================================================
+     HUD — two looks over the same live window.
+
+     APP    you opened it yourself. two big squares: set scene, set timer.
+     WINDOW it opened on you, as the blocker. photo or skip, a phrase, gone.
+
+     Mode comes from the URL so the shield / Shortcuts automation can deep-link
+     straight into the blocker: index.html?mode=window
+     ============================================================ -->
+<div class="hud" id="hud">
+  <button class="dot" id="btn-settings" aria-label="settings"></button>
+
+  <!-- ---- APP ---- -->
+  <div class="core" id="core-app">
+    <button class="sq glass-btn" id="btn-set-scene">
+      <span class="sq-k">set scene</span>
+      <span class="sq-v" id="sq-scene-v">none</span>
+    </button>
+    <button class="sq glass-btn" id="btn-set-timer">
+      <span class="sq-k">set timer</span>
+      <span class="sq-v" id="sq-timer-v">15 min</span>
+    </button>
   </div>
 
-  <div class="controls" id="controls-capture">
-    <button class="btn btn-primary" id="btn-capture">Take a photo</button>
-    <button class="btn btn-ghost" id="btn-skip">Skip today</button>
-    <button class="textbtn" id="btn-flip">flip camera</button>
+  <p class="stamp" id="stamp"></p>
+
+  <!-- ---- WINDOW ---- photo dead centre at the foot, skip alongside -->
+  <div class="shoot" id="core-window">
+    <button class="shoot-btn glass-btn primary" id="btn-capture">photo</button>
+    <button class="shoot-skip glass-btn" id="btn-skip">skip</button>
   </div>
 
-  <div class="controls hidden" id="controls-after">
-    <p class="saved-note">saved to your archive · stays on this device</p>
-    <button class="btn btn-primary" id="btn-continue">Continue</button>
-    <div class="row">
-      <button class="btn btn-ghost" id="btn-done">Done</button>
+  <!-- ---- after the phrase lands ---- -->
+  <div class="after hidden" id="hud-after">
+    <p class="saved-note" id="saved-note">saved · stays on this device</p>
+    <div class="after-row">
+      <button class="btn glass-btn primary" id="btn-continue">continue</button>
+      <button class="btn glass-btn" id="btn-done">done</button>
+    </div>
+    <div class="after-row thin">
+      <button class="textbtn" id="btn-share-now">share</button>
       <button class="textbtn" id="btn-retake">retake</button>
     </div>
+  </div>
+
+  <div class="hud-foot">
+    <button class="lastpic" id="btn-lastpic" aria-label="your windows">
+      <img id="lastpic-img" alt="">
+      <span class="lastpic-empty" id="lastpic-empty"></span>
+    </button>
   </div>
 
   <div class="pickbar hidden" id="pickbar">
     <p class="pickbar-label">pick your line</p>
     <div class="pickbar-chips" id="pickbar-chips"></div>
   </div>
-</section>
+</div>
 
-<!-- ============ HOME ============ -->
-<section id="home" class="screen">
-  <header class="home-head">
-    <h1 class="wordmark">wind<span class="mini-o" aria-hidden="true"><i></i><i></i></span>w</h1>
-    <button class="iconbtn" id="btn-settings" aria-label="settings">···</button>
+<!-- ============ SCENES ============ -->
+<section class="panel" id="scenes">
+  <header class="page-head">
+    <button class="iconbtn" id="btn-scenes-back" aria-label="back">←</button>
+    <h2>scenes</h2>
   </header>
 
-  <div class="stats">
-    <p class="streak"><span id="streak-n">0</span><span class="streak-label">day streak</span></p>
-    <p class="total" id="total-n">0 windows opened</p>
-    <p class="persona-now" id="persona-now">calm</p>
+  <div class="voice-box">
+    <button class="mic" id="btn-mic" aria-label="arm a scene by voice">
+      <span class="mic-ring"></span>
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/>
+        <path d="M18 11a6 6 0 0 1-12 0M12 17v4" fill="none" stroke-width="1.8"/>
+      </svg>
+    </button>
+    <p class="voice-prompt" id="voice-prompt">tap and say “i'm going out”</p>
+    <p class="voice-heard" id="voice-heard"></p>
   </div>
 
-  <div class="home-actions">
-    <button class="btn btn-primary wide" id="btn-open">Open a window</button>
-    <button class="btn btn-ghost wide" id="btn-archive">Archive</button>
-  </div>
-
-  <p class="privacy-line">photos stay on this device. always.</p>
+  <div class="scene-list" id="scene-list"></div>
+  <p class="scene-foot">a scene guards your apps until you end it.<br>your photos stay locked until then.</p>
 </section>
 
 <!-- ============ ARCHIVE ============ -->
-<section id="archive" class="screen">
+<section class="panel" id="archive">
   <header class="page-head">
     <button class="iconbtn" id="btn-archive-back" aria-label="back">←</button>
     <h2>your windows</h2>
+    <span class="head-streak" id="head-streak"></span>
   </header>
+  <div class="locked-note hidden" id="archive-locked">
+    <p class="locked-title">the roll is still in the camera</p>
+    <p class="locked-sub">your <span id="locked-scene">going out</span> photos develop when the scene ends.</p>
+  </div>
   <div class="grid" id="archive-grid"></div>
   <p class="empty hidden" id="archive-empty">no windows yet — go look outside.</p>
 </section>
+
+<!-- ============ DEVELOP ============ -->
+<div class="overlay hidden" id="develop">
+  <p class="dev-kicker">developed</p>
+  <h2 class="dev-title" id="dev-title">the going out roll</h2>
+  <div class="dev-grid" id="dev-grid"></div>
+  <p class="dev-count" id="dev-count">6 windows</p>
+  <div class="row center">
+    <button class="btn glass-btn primary small" id="btn-share-roll">share the roll</button>
+    <button class="textbtn" id="btn-dev-close">done</button>
+  </div>
+</div>
 
 <!-- ============ DETAIL ============ -->
 <div class="overlay hidden" id="detail">
@@ -127,9 +187,33 @@
   <p class="detail-phrase" id="detail-phrase"></p>
   <p class="detail-meta" id="detail-meta"></p>
   <div class="row center">
-    <button class="btn btn-ghost small" id="btn-share">share</button>
+    <button class="btn glass-btn small" id="btn-share">share</button>
     <button class="textbtn danger" id="btn-delete">delete</button>
   </div>
+</div>
+
+<!-- ============ ARM SHEET ============ -->
+<div class="sheet-back hidden" id="arm-back"></div>
+<div class="sheet" id="arm-sheet">
+  <div class="sheet-handle"></div>
+  <h3 id="arm-title">going out</h3>
+  <p class="arm-blurb" id="arm-blurb">for the night</p>
+  <p class="set-label">how long</p>
+  <div class="chips" id="arm-duration"></div>
+  <button class="btn glass-btn primary wide" id="btn-arm-go">start the scene</button>
+  <button class="textbtn wide-text" id="btn-arm-cancel">cancel</button>
+</div>
+
+<!-- ============ TIMER SHEET ============ -->
+<div class="sheet-back hidden" id="timer-back"></div>
+<div class="sheet" id="timer-sheet">
+  <div class="sheet-handle"></div>
+  <h3>the timer</h3>
+  <p class="arm-blurb">window opens once you've been in an app this long</p>
+  <p class="set-label">minutes</p>
+  <div class="chips" id="timer-chips"></div>
+  <p class="set-hint">the everyday mode. it stays on, quietly, and only steps in once you've actually fallen in.</p>
+  <button class="btn glass-btn primary wide" id="btn-timer-done">done</button>
 </div>
 
 <!-- ============ SETTINGS SHEET ============ -->
@@ -138,8 +222,8 @@
   <div class="sheet-handle"></div>
   <h3>settings</h3>
 
-  <p class="set-label">persona</p>
-  <div class="chips" id="persona-chips"></div>
+  <p class="set-label">voice <span class="pill" id="voice-support">—</span></p>
+  <p class="set-hint">the prototype uses the browser's recogniser. the real app does this on-device.</p>
 
   <p class="set-label">phrase</p>
   <div class="chips" id="mode-chips">
@@ -154,6 +238,16 @@
   <p class="set-label">continue to</p>
   <div class="chips" id="app-chips"></div>
 
+  <p class="set-label">panes</p>
+  <div class="chips" id="pane-chips">
+    <button class="chip" data-panes="fade">fade away</button>
+    <button class="chip" data-panes="keep">keep them</button>
+  </div>
+
+  <p class="set-label">filming</p>
+  <button class="btn glass-btn small" id="btn-as-blocker">open as the blocker</button>
+  <p class="set-hint">the window look — photo or skip, nothing else. same as tapping through from a shielded app. add <b>?mode=window</b> to the home-screen shortcut to film it directly.</p>
+
   <p class="set-label">archive</p>
   <button class="textbtn danger" id="btn-clear">clear all windows</button>
 
@@ -161,6 +255,9 @@
 </div>
 
 <script src="js/phrases.js"></script>
+<script src="js/scenes.js"></script>
+<script src="js/voice.js"></script>
+<script src="js/compose.js"></script>
 <script src="js/classify.js"></script>
 <script src="js/app.js"></script>
 </body>
