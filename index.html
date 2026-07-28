@@ -76,7 +76,7 @@
      straight into the blocker: index.html?mode=window
      ============================================================ -->
 <div class="hud" id="hud">
-  <button class="dot" id="btn-settings" aria-label="settings"></button>
+  <button class="dot" id="btn-settings" aria-label="settings"><i aria-hidden="true">···</i></button>
 
   <!-- ---- APP ---- -->
   <div class="core" id="core-app">
@@ -118,10 +118,6 @@
     </button>
   </div>
 
-  <div class="pickbar hidden" id="pickbar">
-    <p class="pickbar-label">pick your line</p>
-    <div class="pickbar-chips" id="pickbar-chips"></div>
-  </div>
 </div>
 
 <!-- ============ SCENES ============ -->
@@ -225,16 +221,6 @@
   <p class="set-label">voice <span class="pill" id="voice-support">—</span></p>
   <p class="set-hint">the prototype uses the browser's recogniser. the real app does this on-device.</p>
 
-  <p class="set-label">phrase</p>
-  <div class="chips" id="mode-chips">
-    <button class="chip" data-mode="auto">auto · reads the scene</button>
-    <button class="chip" data-mode="manual">director · you choose</button>
-  </div>
-  <div id="manual-box" class="hidden">
-    <input type="text" id="manual-phrase" placeholder="write the next line…" maxlength="60">
-    <div class="chips small-chips" id="suggest-chips"></div>
-  </div>
-
   <p class="set-label">continue to</p>
   <div class="chips" id="app-chips"></div>
 
@@ -244,17 +230,14 @@
     <button class="chip" data-panes="keep">keep them</button>
   </div>
 
-  <p class="set-label">filming</p>
-  <button class="btn glass-btn small" id="btn-as-blocker">open as the blocker</button>
-  <p class="set-hint">the window look — photo or skip, nothing else. same as tapping through from a shielded app. add <b>?mode=window</b> to the home-screen shortcut to film it directly.</p>
-
   <p class="set-label">archive</p>
   <button class="textbtn danger" id="btn-clear">clear all windows</button>
 
-  <p class="version">window prototype · <span id="build-stamp">—</span><br>everything stays on this device</p>
+  <p class="version">window · <span id="build-stamp">—</span><br>everything stays on this device</p>
 </div>
 
 <script src="js/phrases.js"></script>
+<script src="js/tier.js"></script>
 <script src="js/scenes.js"></script>
 <script src="js/voice.js"></script>
 <script src="js/compose.js"></script>

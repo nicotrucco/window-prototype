@@ -16,9 +16,9 @@
     None: null
   };
   const TIMER_OPTIONS = [5, 10, 15, 30, 45];
-  const DEFAULTS = { phraseMode: "auto", manualPhrase: "", app: "Instagram", timer: 15, panes: "fade" };
-  let settings = { ...DEFAULTS, ...(JSON.parse(localStorage.getItem("window-settings") || "{}")) };
-  const saveSettings = () => localStorage.setItem("window-settings", JSON.stringify(settings));
+  const DEFAULTS = { app: "Instagram", timer: 15, panes: "fade" };
+  let settings = { ...DEFAULTS, ...(JSON.parse(localStorage.getItem("window-app-settings") || "{}")) };
+  const saveSettings = () => localStorage.setItem("window-app-settings", JSON.stringify(settings));
 
   /* ---------- state ---------- */
   const state = {
@@ -32,19 +32,16 @@
      app     you opened it — set scene, set timer
      window  it opened on you — photo or skip, a phrase, gone
 
-     Mode comes off the URL so the shield (or a Shortcuts automation, or a
-     second home-screen icon) can deep-link straight into the blocker:
-       index.html?mode=window   ·   index.html#window                        */
+     Mode comes off the URL so the shield can deep-link straight into the
+     blocker: index.html?mode=window  ·  index.html#window                   */
+  /* The shipping app opens as the app. The blocker is something that happens
+     TO you, so it only ever arrives via the shield's deep link. */
   function readMode() {
     const q = new URLSearchParams(location.search).get("mode");
     if (q === "window" || q === "app") return q;
     const h = location.hash.replace("#", "");
     if (h === "window" || h === "app") return h;
-    /* Default depends on where it's running. The deployed build is the filming
-       rig on the phone, so it lands straight in the window moment. localhost is
-       the workbench, so it opens the whole app. ?mode= overrides either way. */
-    const local = /^(localhost|127\.0\.0\.1|\[::1\]|.*\.local)$/i.test(location.hostname);
-    return local ? "app" : "window";
+    return "app";
   }
   function setMode(m) {
     state.mode = m;
@@ -54,7 +51,7 @@
   /* ---------- tiny IndexedDB ---------- */
   function idb() {
     return new Promise((res, rej) => {
-      const r = indexedDB.open("window-db", 1);
+      const r = indexedDB.open("window-app-db", 1);
       r.onupgradeneeded = () => r.result.createObjectStore("entries", { keyPath: "id" });
       r.onsuccess = () => res(r.result);
       r.onerror = () => rej(r.error);
@@ -95,15 +92,15 @@
   }
   function bumpStreak() {
     const today = dstr(new Date());
-    const s = JSON.parse(localStorage.getItem("window-streak") || "{}");
+    const s = JSON.parse(localStorage.getItem("window-app-streak") || "{}");
     if (s.last === today) return s.streak;
     const streak = s.last === dayBefore(today) ? (s.streak || 0) + 1 : 1;
-    localStorage.setItem("window-streak", JSON.stringify({ streak, last: today }));
+    localStorage.setItem("window-app-streak", JSON.stringify({ streak, last: today }));
     return streak;
   }
   /* a streak you stopped feeding is not a streak — decay it on read */
   function getStreak() {
-    const s = JSON.parse(localStorage.getItem("window-streak") || "{}");
+    const s = JSON.parse(localStorage.getItem("window-app-streak") || "{}");
     if (!s.last) return 0;
     const today = dstr(new Date());
     return (s.last === today || s.last === dayBefore(today)) ? (s.streak || 0) : 0;
@@ -172,13 +169,13 @@
   }
 
   /* ---------- opening ----------
-     Try to go straight into the live window. Browsers only demand a user
-     gesture for the camera when permission hasn't been granted yet, so on
-     every run after the first this opens with no tap at all — which is the
-     whole point of the blocker: it opens ON you, it doesn't ask.
+     Go straight into the live window. Browsers only demand a user gesture for
+     the camera when permission hasn't been granted yet, so every run after the
+     first opens with no tap — which matters most for the blocker: it opens ON
+     you, it doesn't ask.
 
-     (The old check used navigator.permissions.query({name:"camera"}), which
-     Safari doesn't implement — it rejects, so the veil never lifted.) */
+     (Don't gate this on navigator.permissions.query({name:"camera"}) — Safari
+     doesn't implement it, so the promise rejects and the veil never lifts.) */
   async function openWindow(fromTap) {
     if (state.opened) return;
 
@@ -206,7 +203,6 @@
     $("#phrase").classList.remove("show");
     $("#scrim").classList.remove("show");
     $("#hud-after").classList.add("hidden");
-    $("#pickbar").classList.add("hidden");
     const now = new Date();
     $("#stamp").textContent = `${pad(now.getHours())}:${pad(now.getMinutes())} · today`;
   }
@@ -244,19 +240,10 @@
     document.body.classList.add("shot");
 
     const bucket = await window.classifyCanvas(canvas);
-
-    if (settings.phraseMode === "manual" && !settings.manualPhrase.trim()) {
-      showPickbar(bucket, phrase => landPhrase(phrase, bucket, dataUrl));
-      return;
-    }
-    const phrase = settings.phraseMode === "manual"
-      ? settings.manualPhrase.trim()
-      : pickPhrase(bucket);
-    landPhrase(phrase, bucket, dataUrl);
+    landPhrase(pickPhrase(bucket), bucket, dataUrl);
   }
 
   function landPhrase(phrase, bucket, dataUrl) {
-    $("#pickbar").classList.add("hidden");
     $("#phrase-text").textContent = phrase;
     $("#scrim").classList.add("show");
     $("#phrase").classList.add("show");
@@ -287,20 +274,6 @@
     } else cont.classList.add("hidden");
 
     setTimeout(() => $("#hud-after").classList.remove("hidden"), 1100);
-  }
-
-  function showPickbar(bucket, onPick) {
-    const chips = $("#pickbar-chips");
-    chips.innerHTML = "";
-    const scene = window.Scenes.activeScene();
-    const opts = [...new Set([...bankFor(scene, bucket), ...bankFor(scene, "default")])].slice(0, 10);
-    opts.forEach(p => {
-      const b = document.createElement("button");
-      b.className = "chip"; b.textContent = p;
-      b.onclick = () => onPick(p);
-      chips.appendChild(b);
-    });
-    $("#pickbar").classList.remove("hidden");
   }
 
   function retake() {
@@ -481,9 +454,6 @@
     const visible = armed ? all.filter(e => e.rollId !== armed.rollId) : all;
     const lockedCount = all.length - visible.length;
 
-    const st = getStreak();
-    $("#head-streak").textContent = st ? `${st} day streak` : "";
-
     $("#archive-locked").classList.toggle("hidden", !armed || !lockedCount);
     if (armed) $("#locked-scene").textContent = window.Scenes.label(armed.scene);
 
@@ -494,16 +464,27 @@
     visible.forEach(e => {
       const d = new Date(e.createdAt);
       const el = document.createElement("div");
-      el.className = "thumb";
+      el.className = "thumb" + (window.Tier.isFading(e) ? " fading" : "");
+      /* the countdown is the point — a photo that vanishes silently converts nobody */
+      const fade = window.Tier.expiryLabel(e);
       el.innerHTML = `
         <div class="winframe"><div class="glass">
           <img src="${e.dataUrl}" alt="">
           <div class="mull mull-v"></div><div class="mull mull-h"></div>
         </div></div>
-        <p class="thumb-date">${d.getDate()}/${d.getMonth() + 1} · ${pad(d.getHours())}:${pad(d.getMinutes())}</p>`;
+        <p class="thumb-date">${d.getDate()}/${d.getMonth() + 1} · ${pad(d.getHours())}:${pad(d.getMinutes())}</p>
+        ${fade ? `<p class="thumb-fade">${fade}</p>` : ""}`;
       el.onclick = () => openDetail(e);
       grid.appendChild(el);
     });
+
+    /* tier line in the header */
+    const st = window.Tier.status();
+    $("#head-streak").textContent =
+      st === "trial" ? `${window.Tier.trialDaysLeft()} days of everything`
+      : st === "window-plus" ? (getStreak() ? `${getStreak()} day streak` : "")
+      : (getStreak() ? `${getStreak()} day streak` : "");
+
     openPanel("archive");
   }
 
@@ -620,10 +601,6 @@
 
     renderChips("#app-chips", Object.keys(APP_SCHEMES), settings.app, v => { settings.app = v; saveSettings(); });
 
-    document.querySelectorAll("#mode-chips .chip").forEach(c => {
-      c.classList.toggle("on", c.dataset.mode === settings.phraseMode);
-      c.onclick = () => { settings.phraseMode = c.dataset.mode; saveSettings(); renderSettings(); };
-    });
     document.querySelectorAll("#pane-chips .chip").forEach(c => {
       c.classList.toggle("on", c.dataset.panes === settings.panes);
       c.onclick = () => {
@@ -632,19 +609,6 @@
       };
     });
 
-    $("#manual-box").classList.toggle("hidden", settings.phraseMode !== "manual");
-    $("#manual-phrase").value = settings.manualPhrase;
-
-    const sug = $("#suggest-chips");
-    sug.innerHTML = "";
-    const P = window.PHRASES[window.Scenes.activeScene()] || window.PHRASES.everyday;
-    const lines = [...new Set(Object.values(P).flat())].sort(() => Math.random() - .5).slice(0, 8);
-    lines.forEach(p => {
-      const b = document.createElement("button");
-      b.className = "chip"; b.textContent = p;
-      b.onclick = () => { settings.manualPhrase = p; saveSettings(); renderSettings(); };
-      sug.appendChild(b);
-    });
   }
   function openSettings() { renderSettings(); $("#sheet-back").classList.remove("hidden"); $("#settings-sheet").classList.add("open"); }
   function closeSettings() { $("#sheet-back").classList.add("hidden"); $("#settings-sheet").classList.remove("open"); }
@@ -665,11 +629,6 @@
   $("#btn-set-timer").onclick = openTimer;
   $("#btn-lastpic").onclick = openArchive;
   $("#btn-settings").onclick = openSettings;
-  $("#btn-as-blocker").onclick = () => {
-    closeSettings();
-    setMode("window");
-    backToWindow();
-  };
 
   $("#btn-scenes-back").onclick = backToWindow;
   $("#btn-mic").onclick = startVoice;
@@ -694,7 +653,6 @@
   $("#btn-dev-close").onclick = () => { $("#develop").classList.add("hidden"); refreshHud(); };
 
   $("#sheet-back").onclick = closeSettings;
-  $("#manual-phrase").oninput = e => { settings.manualPhrase = e.target.value; saveSettings(); };
   $("#btn-clear").onclick = async () => {
     if (confirm("delete every window? this can't be undone.")) {
       await dbClear(); refreshHud(); closeSettings();
@@ -715,7 +673,7 @@
   });
 
   /* ---------- boot ---------- */
-  const BUILD = "v5";
+  const BUILD = "app-v4";
 
   if ("serviceWorker" in navigator) {
     /* updateViaCache:"none" stops Safari serving a stale sw.js out of the HTTP

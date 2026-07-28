@@ -6,7 +6,7 @@
    The UI and the state machine are the same ones that port to SwiftUI. */
 
 (function () {
-  const KEY = "window-scene";
+  const KEY = "window-app-scene";
 
   /* armed = { scene, armedAt, endsAt|null, rollId } */
   function read() {

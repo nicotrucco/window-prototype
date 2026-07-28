@@ -2,23 +2,21 @@
 
    NETWORK-FIRST for our own files, cache only as the offline fallback.
 
-   This used to be cache-first, which meant a freshly deployed build wouldn't
-   appear until at least the second launch — and on an installed iOS PWA often
-   not even then, because Safari happily serves a stale sw.js from the HTTP
-   cache and so never notices there's a new worker at all. For a filming rig
-   that's the worst possible failure: you shoot the previous build without
-   realising. Fresh code every time you're online is worth the round trip;
-   offline still works off the cache below.
+   Cache-first meant a freshly deployed build wouldn't appear until at least the
+   second launch — and on an installed iOS PWA often not even then, because
+   Safari serves a stale sw.js from the HTTP cache and so never notices there's
+   a new worker at all. Fresh code whenever you're online is worth the round
+   trip; offline still works off the cache below.
 
    Registered with updateViaCache:"none" (see js/app.js) so sw.js itself is
    never served from the HTTP cache. */
 
-const BUILD = "v5";
+const BUILD = "app-v4";
 const CACHE = "window-" + BUILD;
 const CORE = [
   "./", "./index.html",
   "./css/app.css",
-  "./js/app.js", "./js/phrases.js", "./js/scenes.js",
+  "./js/app.js", "./js/phrases.js", "./js/tier.js", "./js/scenes.js",
   "./js/voice.js", "./js/compose.js", "./js/classify.js",
   "./img/frame-tall.png", "./img/frame-open-tall.png",
   "./manifest.webmanifest",
