@@ -28,6 +28,16 @@
   --lg-blur: 18px;
   --lg-lift: .70;
   --lg-tint: rgba(9,9,11,.20);
+
+  /* Refraction knobs. --lg-exit is the far edge where light leaves the glass —
+     the bright one. --lg-enter is the near edge where it goes in, deliberately
+     almost dark. --lg-scatter is light bleeding into the body of the material.
+     If the edges shout, drop --lg-exit first; if it looks flat, raise
+     --lg-scatter before touching anything else. */
+  --lg-enter:   rgba(255,255,255,.10);
+  --lg-exit:    rgba(255,255,255,.80);
+  --lg-rim:     rgba(255,255,255,.55);
+  --lg-scatter: rgba(255,255,255,.11);
 }
 
 * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
@@ -170,11 +180,21 @@ html, body {
    That lets the tint stay light (.20, not .34), so the sky's colour still
    transmits through instead of being buried under a grey card.
 
-   The rim. A single flat border on all four sides is the giveaway of cheap
-   glass. Light arrives from the top-left, so the rim is bright there, all but
-   gone at the lower-right, with a faint bounce along the bottom. Painted as a
-   masked gradient ring — mask-composite is honoured by WebKit, unlike the SVG
-   displacement every Liquid Glass demo leans on (WebKit bug 245510).
+   The rim — and this is the part that decides whether it reads as glass.
+   Metal is bright where the light HITS it. Glass is bright where the light
+   LEAVES it. So the near edge (top-left) is almost dark and the far edge
+   (bottom-right) is the bright one: light enters, bends through the body,
+   and exits the opposite side. Lighting the near edge instead is the single
+   thing that makes translucency look like a grey plastic chip.
+
+   Built from stacked inset shadows rather than a 1px ring, because a ring has
+   no thickness — real glass has a bevel that falls off over a few px and
+   scatters light into its own interior. Four layers do that: a wide soft
+   bevel each side, a tight rim each side, then two broad interior scatters.
+
+   Inset box-shadow is fully honoured by WebKit. The SVG displacement route
+   every Liquid Glass demo uses is NOT — backdrop-filter:url(#f) silently does
+   nothing in Safari (WebKit bug 245510), so it can never ship in this app.
    ============================================================ */
 .glass-btn, .lastpic, .dot, .mic {
   position:relative;
@@ -185,9 +205,19 @@ html, body {
   backdrop-filter:blur(var(--lg-blur)) saturate(185%) brightness(var(--lg-lift)) contrast(1.04);
   color:var(--text-hi);
   box-shadow:
-    0 1px 1px rgba(255,255,255,.10),     /* the lit top facet, hairline */
-    0 10px 30px rgba(0,0,0,.44),         /* contact shadow, close */
-    0 2px 8px rgba(0,0,0,.30);           /* and its tight core */
+    /* bevel — wide, soft, falling off inward. Near edge barely there. */
+    inset  3px  3px .5px -3.5px var(--lg-enter),
+    inset -3px -3px .5px -3.5px var(--lg-exit),
+    /* rim — tight and crisp, where the surface actually turns */
+    inset  1px  1px 1px -.5px var(--lg-rim),
+    inset -1px -1px 1px -.5px var(--lg-rim),
+    /* scatter — light living inside the material, not on its face */
+    inset 0 0 6px 6px var(--lg-scatter),
+    inset 0 0 2px 2px rgba(255,255,255,.06),
+    /* and the glass sitting off the view */
+    0 10px 30px rgba(0,0,0,.44),
+    0 2px 8px rgba(0,0,0,.30),
+    0 0 12px rgba(255,255,255,.05);
 }
 
 /* 2 — specular. Small, diagonal and screen-blended: it adds light rather than
@@ -197,21 +227,24 @@ html, body {
   content:""; position:absolute; inset:0; z-index:-1;
   border-radius:inherit; pointer-events:none;
   background:
-    radial-gradient(120% 90% at 14% 6%, rgba(255,255,255,.30), transparent 46%),
-    linear-gradient(148deg, rgba(255,255,255,.14) 0%, transparent 34%);
+    radial-gradient(120% 90% at 14% 6%, rgba(255,255,255,.20), transparent 46%),
+    linear-gradient(148deg, rgba(255,255,255,.09) 0%, transparent 34%);
   mix-blend-mode:screen;
 }
 
-/* 3 — the rim */
+/* 3 — the edge. The inset stack above carries the bevel now; this is only the
+   sub-pixel line where the surface turns, which a blurred inset shadow can't
+   hold crisply around a radius. Same refraction direction: dim where light
+   enters, bright where it leaves. */
 .glass-btn::after, .lastpic::after, .dot::after, .mic::after {
   content:""; position:absolute; inset:0;
   border-radius:inherit; padding:1px; pointer-events:none;
   background:linear-gradient(145deg,
-    rgba(255,255,255,.72) 0%,
-    rgba(255,255,255,.28) 22%,
-    rgba(255,255,255,.06) 48%,
-    rgba(255,255,255,.03) 66%,
-    rgba(255,255,255,.26) 100%);
+    rgba(255,255,255,.10) 0%,
+    rgba(255,255,255,.05) 30%,
+    rgba(255,255,255,.14) 58%,
+    rgba(255,255,255,.44) 84%,
+    rgba(255,255,255,.62) 100%);
   -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
           mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite:xor;
@@ -226,8 +259,14 @@ html, body {
   -webkit-backdrop-filter:blur(var(--lg-blur)) saturate(150%) brightness(1.06);
   backdrop-filter:blur(var(--lg-blur)) saturate(150%) brightness(1.06);
   color:#14120E;
+  /* cream is a dense material, not a transparent one — so it gets an honest
+     raised bevel (lit above, warm shadow below) rather than the refraction
+     inversion the clear glass uses. Same light, different substance. */
   box-shadow:
-    0 1px 0 rgba(255,255,255,.85),
+    inset  0  1px 1px -.5px rgba(255,255,255,.95),
+    inset  2px 2px 2px -2px rgba(255,255,255,.80),
+    inset -2px -2px 3px -2px rgba(140,126,102,.45),
+    inset  0 -1px 1px -.5px rgba(140,126,102,.35),
     0 12px 34px rgba(0,0,0,.46),
     0 2px 8px rgba(0,0,0,.28);
 }
@@ -240,25 +279,32 @@ html, body {
   background:linear-gradient(145deg,
     rgba(255,255,255,.95) 0%,
     rgba(255,255,255,.45) 30%,
-    rgba(140,126,102,.22) 62%,
-    rgba(255,255,255,.40) 100%);
+    rgba(140,126,102,.28) 68%,
+    rgba(140,126,102,.20) 100%);
 }
 
 /* pressed — the glass compresses against the view: it clears a little and the
    contact shadow pulls in, so the press reads as depth, not just a scale */
 .glass-btn:active, .lastpic:active, .dot:active, .mic:active {
   --lg-tint:rgba(9,9,11,.30);
+  --lg-scatter:rgba(255,255,255,.15);    /* squeezed glass concentrates light */
   box-shadow:
-    0 1px 1px rgba(255,255,255,.10),
-    0 4px 12px rgba(0,0,0,.40),
+    inset  2px  2px .5px -2.5px var(--lg-enter),
+    inset -2px -2px .5px -2.5px var(--lg-exit),
+    inset  1px  1px 1px -.5px var(--lg-rim),
+    inset -1px -1px 1px -.5px var(--lg-rim),
+    inset 0 0 5px 5px var(--lg-scatter),
+    inset 0 0 2px 2px rgba(255,255,255,.07),
+    0 4px 12px rgba(0,0,0,.40),          /* contact pulls in — reads as depth */
     0 1px 4px rgba(0,0,0,.30);
 }
 .glass-btn:active::after, .dot:active::after, .lastpic:active::after {
   background:linear-gradient(145deg,
-    rgba(255,255,255,.90) 0%,
-    rgba(255,255,255,.38) 26%,
-    rgba(255,255,255,.10) 52%,
-    rgba(255,255,255,.34) 100%);
+    rgba(255,255,255,.14) 0%,
+    rgba(255,255,255,.07) 30%,
+    rgba(255,255,255,.20) 58%,
+    rgba(255,255,255,.52) 84%,
+    rgba(255,255,255,.70) 100%);
 }
 
 /* ============================================================
@@ -657,8 +703,14 @@ body.shot #core-app, body.shot #core-window { display:none; }
   -webkit-backdrop-filter:blur(40px) saturate(180%) brightness(.55);
   backdrop-filter:blur(40px) saturate(180%) brightness(.55);
   border-radius:22px 22px 0 0;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.16),
-             0 -18px 50px rgba(0,0,0,.55);
+  /* same material at panel scale — the bevel is scaled up and the scatter
+     softened, because a large pane shows its interior more than its edge */
+  box-shadow:
+    inset  4px  4px 1px -4px rgba(255,255,255,.10),
+    inset -4px -4px 1px -4px rgba(255,255,255,.40),
+    inset  0  1px 1px -.5px rgba(255,255,255,.34),
+    inset 0 0 40px 12px rgba(255,255,255,.045),
+    0 -18px 50px rgba(0,0,0,.55);
   padding:14px 24px calc(env(safe-area-inset-bottom) + 28px);
   transform:translateY(105%);
   transition:transform .5s var(--ease);
