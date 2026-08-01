@@ -329,6 +329,8 @@ body.turned .veil-in .go, body.asked .veil-in .go{opacity:1;}
   }
 
   async function startCamera(){
+    /* never re-request over a live stream — see trackLive() below */
+    if(trackLive()) return true;
     stopCamera();
     try{
       state.stream = await navigator.mediaDevices.getUserMedia({
@@ -428,12 +430,20 @@ body.turned .veil-in .go, body.asked .veil-in .go{opacity:1;}
   setTimeout(() => document.body.classList.add("asked"), 4500);
 
   window.addEventListener("orientationchange", () => setTimeout(() => { paintBar(); readTurn(); }, 300));
+  /* Only re-acquire when the track is genuinely dead. Calling getUserMedia a
+     second time while a stream is live kills the first one
+     (webkit.org/show_bug.cgi?id=179363) — which is what made the camera glitch
+     and re-pick on every flip. Rotating must never touch the stream. */
+  function trackLive(){
+    const t = state.stream && state.stream.getVideoTracks()[0];
+    return !!t && t.readyState === "live";
+  }
   document.addEventListener("visibilitychange", () => {
-    /* WebKit mutes capture the moment the page backgrounds and only restarts
-       on return — so re-acquire rather than showing a dead black frame. */
-    if(document.visibilityState === "visible" && !state.shot && $("#veil").classList.contains("gone")){
-      startCamera();
-    }
+    if(document.visibilityState !== "visible") return;
+    if(state.shot || !$("#veil").classList.contains("gone")) return;
+    /* WebKit mutes capture on background and restarts it on return by itself.
+       Give it a beat, and only step in if the track actually ended. */
+    setTimeout(() => { if(!trackLive()) startCamera(); }, 400);
   });
 
   paintBar();
