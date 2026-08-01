@@ -652,18 +652,28 @@ body.shot #core-app, body.shot #core-window { display:none; }
 }
 .wordmark.big { font-size:46px; }
 /* the O in UCCO is the window, and it's round — a circle reads as the letter
-   AND as a porthole. The crossbars meet the rim exactly at its widest points,
-   so the 4-pane device and the last letter are one object. */
+   AND as a porthole. The crossbars meet the rim at its widest points, so the
+   4-pane device and the last letter are one object.
+
+   Sized in `ex`, which IS the x-height of whatever face is rendering — so the
+   circle matches u-c-c exactly and keeps matching if the type ever changes.
+   Sits on the baseline like a letter (an inline-block's baseline is its bottom
+   edge), and the stroke is set in em so it tracks the letterform weight
+   instead of staying 2px while the type scales. */
 .mini-o {
   display:inline-block; position:relative;
-  width:.66em; height:.66em; margin:0 .04em;
-  border:2px solid var(--frame); border-radius:50%;
-  align-self:center;
+  width:1ex; height:1ex;
+  border:.072em solid var(--frame); border-radius:50%;
+  vertical-align:baseline;
+  margin:0 .045em 0 .055em;   /* optical sidebearing: round letters need less */
   box-shadow:0 0 14px rgba(236,228,212,.35);
 }
+/* the mullions carry the same weight as the rim and stop at its inner edge —
+   absolute positioning resolves against the padding box, so they meet the
+   circle cleanly with no overshoot at the corners. */
 .mini-o i { position:absolute; background:var(--frame); }
-.mini-o i:first-child { left:50%; top:0; bottom:0; width:2px; margin-left:-1px; }
-.mini-o i:last-child  { top:50%; left:0; right:0; height:2px; margin-top:-1px; }
+.mini-o i:first-child { left:50%; top:0; bottom:0; width:.072em; transform:translateX(-50%); }
+.mini-o i:last-child  { top:50%; left:0; right:0; height:.072em; transform:translateY(-50%); }
 .tagline {
   font-family:'Fraunces', serif; font-style:italic;
   color:var(--muted); font-size:17px; margin-top:14px;
