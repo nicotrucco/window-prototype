@@ -1,6 +1,6 @@
 {
-  "name": "Window",
-  "short_name": "Window",
+  "name": "UCCO",
+  "short_name": "ucco",
   "description": "look outside.",
   "start_url": "./",
   "scope": "./",

@@ -143,8 +143,8 @@
     ctx.fillStyle = MUTED;
     ctx.globalAlpha = 0.75;
     const sceneName = entry.scene && entry.scene !== "everyday"
-      ? `window · ${window.Scenes.label(entry.scene)}`
-      : "window · look outside";
+      ? `ucco · ${window.Scenes.label(entry.scene)}`
+      : "ucco · look outside";
     ctx.fillText(sceneName.toLowerCase(), W / 2, H - 62);
     ctx.globalAlpha = 1;
 
@@ -203,7 +203,7 @@
     ctx.font = `500 24px 'Hanken Grotesk', system-ui, sans-serif`;
     ctx.fillStyle = MUTED;
     ctx.globalAlpha = 0.72;
-    ctx.fillText("window · look outside", W / 2, H - 60);
+    ctx.fillText("ucco · look outside", W / 2, H - 60);
     ctx.globalAlpha = 1;
 
     return c;
