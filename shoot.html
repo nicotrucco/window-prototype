@@ -273,35 +273,77 @@ body.turned .veil-in .go, body.asked .veil-in .go{opacity:1;}
 (function(){
   const $ = s => document.querySelector(s);
 
-  /* The bank. Always random, never chosen — that is the whole point: the line
-     is a gift you didn't pick, so it lands as a surprise on every take. */
-  const LINES = [
-    "this light is unreal",
-    "go touch something that isn't glass",
-    "the sky did that on its own",
-    "nothing out here is trying to sell you something",
-    "that's a real colour, not a filter",
-    "you were about to miss this",
-    "look how far away that is",
-    "the air is doing something today",
-    "none of this was buffering",
-    "this is happening whether you watch or not",
-    "everything here is full resolution",
-    "somebody built that a hundred years ago",
-    "no one made this for you and it's still good",
-    "that cloud is bigger than the building",
-    "you can hear it too, if you stop",
-    "this is the only place your eyes can focus far",
-    "the wind is free and it's right there",
-    "you'll forget this one, take it anyway",
-    "the day is doing fine without your input",
-    "keep looking, it's still going",
-    "that shadow will be gone in ten minutes",
-    "nothing out here refreshes",
-    "you don't have to do anything with this",
-    "it was worth turning the phone for"
-  ];
+  /* The banks. Always random, never chosen — the line is a gift you didn't
+     pick, so it lands as a surprise on every take.
 
+     Register: push, never scold. 0003 says this is a bouncer they hired, not
+     a nag — so these give permission and momentum, and none of them imply the
+     user failed. Spanish is Chilean, not neutral LATAM: the launch market
+     should hear its own voice, not a dubbed one. */
+  const BANK = {
+    en: [
+      "put it down, it'll still be here",
+      "go be somewhere",
+      "the day is not going to wait",
+      "nothing out here is trying to sell you anything",
+      "you already know what you should be doing",
+      "go make something instead",
+      "this is the part where you get up",
+      "the work is out there, not in here",
+      "unplug, the feed survives without you",
+      "go get your hours in",
+      "look far away for a second",
+      "you don't owe the scroll anything",
+      "somebody's outside right now, be them",
+      "close it, you've got things",
+      "the grind is real, the feed is not",
+      "go outside and be unreachable",
+      "you came here to look, so look",
+      "one hour off this is one hour of your life back",
+      "go do the thing you keep postponing",
+      "nobody made anything good while scrolling",
+      "the sky is free and it's right there",
+      "step out, come back sharper",
+      "this is your sign, obviously",
+      "go touch something real"
+    ],
+    es: [
+      "déjalo, no se va a ir a ningún lado",
+      "anda a estar en alguna parte",
+      "el día no te va a esperar",
+      "acá afuera nadie te está vendiendo nada",
+      "ya sabís lo que tenís que hacer",
+      "anda a hacer algo mejor",
+      "esta es la parte donde te paras",
+      "la pega está allá afuera, no acá",
+      "desenchúfate, el feed sobrevive sin ti",
+      "anda a hacer tus horas",
+      "mira lejos un rato",
+      "no le debís nada al scroll",
+      "alguien está afuera ahora, sé esa persona",
+      "ciérralo, tenís cosas",
+      "la pega es real, el feed no",
+      "sal y desaparece un rato",
+      "viniste a mirar, entonces mira",
+      "una hora menos acá es una hora más tuya",
+      "anda a hacer eso que vení postergando",
+      "nadie hizo nada bueno scrolleando",
+      "el cielo es gratis y está ahí",
+      "sal un rato, vuelve más despierto",
+      "esta es tu señal, obvio",
+      "anda a tocar algo real"
+    ]
+  };
+
+  /* Chile ships first, so Spanish is the default for any es-* device.
+     ?lang=en / ?lang=es forces it, which is what filming needs. */
+  const LANG = (() => {
+    const q = new URLSearchParams(location.search).get("lang");
+    if (q === "en" || q === "es") return q;
+    return (navigator.language || "en").toLowerCase().startsWith("es") ? "es" : "en";
+  })();
+  const LINES = BANK[LANG];
+  document.documentElement.lang = LANG;
   const ROLL = 24;
   const rollN = () => {
     const n = parseInt(localStorage.getItem("moment-roll") || "0", 10);
