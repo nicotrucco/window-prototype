@@ -47,29 +47,33 @@ html,body{
   -webkit-user-select:none;user-select:none;
 }
 
-/* ---------- the stage ---------- */
-#stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;}
+/* ---------- the stage ----------
+   THE PHONE IS THE WINDOW. Full bleed, always.
 
-/* 3:2 in both orientations — it's the shape a contact sheet is made of.
-   Landscape is bigger, which is the entire reward for turning the phone. */
-.window{
-  position:relative;
-  width:min(88vw,58vh); aspect-ratio:3/2;
-  filter:drop-shadow(0 0 60px rgba(236,228,212,.12)) drop-shadow(0 18px 46px rgba(0,0,0,.7));
-  transition:width .6s var(--ease), filter .6s var(--ease);
-}
-@media (orientation:landscape){ .window{ width:min(94vw,156vh); } }
+   The first build put a 3:2 letterbox inside the page, which breaks the moment
+   rotation lock is on: the page never re-lays-out, so turning the phone just
+   tilts a fixed rectangle — "a cut open card put horizontal". Filling the
+   screen is correct at any angle, with or without rotation lock, and the 3:2
+   crop happens at capture where it belongs. */
+#stage{position:fixed;inset:0;}
+.window{position:absolute;inset:0;}
 
 .glass{position:absolute;inset:0;overflow:hidden;background:#0B0B0B;}
 .glass video,.glass img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
 #freeze{display:none;}
 #freeze.show{display:block;}
 
-/* portrait dims the view — never blocks it. rotation lock is on for a lot of
-   people and an app that refuses to work until you rotate is broken. */
-@media (orientation:portrait){
-  body:not(.shot) .glass{filter:brightness(.6) saturate(.8);transition:filter .5s var(--ease);}
-}
+/* the 3:2 guide — what the frame will actually keep. hairline, so it reads as
+   a viewfinder marking rather than a border. */
+.guide{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);
+  z-index:2;pointer-events:none;
+  aspect-ratio:3/2;
+  box-shadow:0 0 0 100vmax rgba(6,6,6,.5);
+  outline:1px solid rgba(236,228,212,.28);
+  transition:opacity .5s var(--ease);}
+body.shot .guide{opacity:0;}
+/* landscape fills it, so the mask has nothing to darken and the guide retires */
+@media (orientation:landscape){ .guide{opacity:0;} }
 
 /* the shade lifts like a blind — the hero beat */
 .shade{position:absolute;inset:0;z-index:6;background:var(--void);
@@ -126,7 +130,7 @@ body.shot .shutter{opacity:0;pointer-events:none;}
   z-index:12;display:flex;flex-direction:column;align-items:center;gap:8px;
   pointer-events:none;transition:opacity .4s var(--ease);}
 @media (orientation:landscape){ .turn{opacity:0;} }
-body.shot .turn{opacity:0;}
+body.shot .turn, body.asked .turn{opacity:0;pointer-events:none;}
 .turn-glyph{width:15px;height:24px;border:1.5px solid var(--coral);border-radius:3px;}
 .turn-label{font-size:10px;letter-spacing:.26em;text-transform:uppercase;color:var(--coral);}
 @media (prefers-reduced-motion:no-preference){
@@ -203,6 +207,7 @@ body.shot .folio{opacity:1;}
     </div>
 
     <!-- instrument: hairline, nothing over the shot -->
+    <div class="guide"></div>
     <div class="sill"></div>
     <div class="mull mull-v"></div>
     <div class="mull mull-h"></div>
@@ -322,6 +327,9 @@ body.shot .folio{opacity:1;}
     paintBar();
     /* the shade lifts — the hero beat, and the reason to film the open */
     setTimeout(() => $("#shade").classList.add("open"), 260);
+    /* the turn cue asks once and then stops. with rotation lock on the screen
+       never goes landscape, and a cue that nags forever is worse than none. */
+    setTimeout(() => document.body.classList.add("asked"), 6000);
   }
 
   function shoot(){
