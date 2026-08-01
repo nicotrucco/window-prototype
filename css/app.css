@@ -473,6 +473,7 @@ body.shot .ibar { display:none; }
   padding-right:46px;                    /* clears the settings dot */
   font-family:var(--mono); font-size:10px; letter-spacing:.22em;
   text-transform:uppercase; color:var(--muted);
+  pointer-events:none;                   /* the dot lives under this strip */
 }
 .stamp { font-family:var(--mono); letter-spacing:.22em; color:var(--muted); }
 

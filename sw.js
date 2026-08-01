@@ -11,14 +11,13 @@
    Registered with updateViaCache:"none" (see js/app.js) so sw.js itself is
    never served from the HTTP cache. */
 
-const BUILD = "app-v4";
+const BUILD = "app-v5";
 const CACHE = "window-" + BUILD;
 const CORE = [
   "./", "./index.html",
   "./css/app.css",
   "./js/app.js", "./js/phrases.js", "./js/tier.js", "./js/scenes.js",
-  "./js/voice.js", "./js/compose.js", "./js/classify.js",
-  "./img/frame-tall.png", "./img/frame-open-tall.png",
+  "./js/voice.js", "./js/siriwave.js", "./js/compose.js", "./js/classify.js",
   "./manifest.webmanifest",
   "./icons/icon-180.png", "./icons/icon-192.png", "./icons/icon-512.png"
 ];

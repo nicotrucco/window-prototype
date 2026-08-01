@@ -633,59 +633,82 @@
   /* ---------- archive ---------- */
   async function openArchive() {
     const armed = window.Scenes.current();
-    const all = (await dbAll()).sort((a, b) => b.id - a.id);
-    const visible = armed ? all.filter(e => e.rollId !== armed.rollId) : all;
-    const lockedCount = all.length - visible.length;
+    const all = (await dbAll()).sort((a, b) => a.id - b.id);   /* oldest first — a roll reads forward */
+    const lockedCount = armed ? all.filter(e => e.rollId === armed.rollId).length : 0;
 
     $("#archive-locked").classList.toggle("hidden", !armed || !lockedCount);
     if (armed) $("#locked-scene").textContent = window.Scenes.label(armed.scene);
 
-    const grid = $("#archive-grid");
-    grid.innerHTML = "";
-    $("#archive-empty").classList.toggle("hidden", visible.length > 0 || !!lockedCount);
-
     /* 0016 — the archive is a contact sheet, not a grid of thumbnails.
        Strips of three with sprocket margins, frame numbers on the film base,
        and the unexposed cells left visibly empty: that is the roll still
-       filling, which a grid cannot express. */
+       filling, which a grid cannot express.
+
+       Numbering walks back from the roll counter so the newest photo carries
+       the frame the counter says it is; older rolls wrap 24→1 behind it.
+       A shot locked inside an armed scene renders latent — exposed but not
+       developed, which is exactly what it is. */
     const PER_STRIP = 3;
     const roll = getRoll();
-    const cells = [];
-    visible.forEach(e => cells.push(e));
-    /* pad out to the end of the current roll so the empty frames show */
-    const shown = Math.min(cells.length, ROLL_SIZE);
-    const blanks = Math.max(0, Math.min(ROLL_SIZE, roll.raw === 0 ? ROLL_SIZE : ROLL_SIZE) - shown);
-    const total = shown + blanks;
+    let num = roll.n === 0 ? ROLL_SIZE : roll.n;
+    const nums = new Array(all.length);
+    for (let i = all.length - 1; i >= 0; i--) {
+      nums[i] = num;
+      num = num === 1 ? ROLL_SIZE : num - 1;
+    }
+
+    const grid = $("#archive-grid");
+    grid.innerHTML = "";
+    const frag = [];
+
+    all.forEach((e, i) => {
+      const cell = document.createElement("div");
+      const n = nums[i];
+      if (armed && e.rollId === armed.rollId) {
+        cell.className = "fr unexposed latent";
+        cell.innerHTML = `<span class="fr-n">${n}</span>`;
+      } else {
+        cell.className = "fr" + (window.Tier.isFading(e) ? " fading" : "");
+        const fade = window.Tier.expiryLabel(e);
+        cell.innerHTML = `
+          <img src="${e.dataUrl}" alt="">
+          <div class="mull mull-v"></div><div class="mull mull-h"></div>
+          <span class="fr-n">${n}</span>
+          ${fade ? `<span class="fr-fade">${fade}</span>` : ""}`;
+        cell.onclick = () => openDetail(e);
+      }
+      frag.push(cell);
+    });
+
+    /* the rest of the current roll, visibly empty — the pull is completion */
+    for (let k = roll.n + 1; k <= ROLL_SIZE; k++) {
+      const cell = document.createElement("div");
+      cell.className = "fr unexposed";
+      cell.innerHTML = `<span class="fr-n">${k}</span>`;
+      frag.push(cell);
+    }
 
     let strip = null;
-    for (let i = 0; i < total; i++) {
+    frag.forEach((cell, i) => {
       if (i % PER_STRIP === 0) {
         strip = document.createElement("div");
         strip.className = "strip";
         grid.appendChild(strip);
       }
-      const e = cells[i];
-      const cell = document.createElement("div");
-      const n = i + 1;
-      if (!e) {
-        cell.className = "fr unexposed";
-        cell.innerHTML = `<span class="fr-n">${n}</span>`;
-        strip.appendChild(cell);
-        continue;
-      }
-      cell.className = "fr" + (window.Tier.isFading(e) ? " fading" : "");
       cell.style.setProperty("--d", (i * 0.14) + "s");
-      const fade = window.Tier.expiryLabel(e);
-      cell.innerHTML = `
-        <img src="${e.dataUrl}" alt="">
-        <div class="mull mull-v"></div><div class="mull mull-h"></div>
-        <span class="fr-n">${n}</span>
-        ${fade ? `<span class="fr-fade">${fade}</span>` : ""}`;
-      cell.onclick = () => openDetail(e);
       strip.appendChild(cell);
+    });
+    while (strip && strip.childElementCount % PER_STRIP !== 0) {
+      const pad = document.createElement("div");
+      pad.className = "fr pad";
+      strip.appendChild(pad);
     }
-    grid.classList.toggle("developing", state.justDeveloped);
+    grid.classList.toggle("developing", !!state.justDeveloped);
     state.justDeveloped = false;
+
+    /* the sheet's caption: which roll, how full */
+    $("#af-roll").textContent = `roll no. ${roll.no}`;
+    $("#af-count").textContent = `${roll.n} / ${ROLL_SIZE}`;
 
     /* tier line in the header */
     const st = window.Tier.status();
@@ -702,8 +725,12 @@
     $("#detail-img").src = e.dataUrl;
     $("#detail-phrase").textContent = e.phrase;
     const d = new Date(e.createdAt);
+    /* the fade countdown moved here when the grid became the sheet — the
+       cells are too small to carry it, but the loss still has to be visible */
+    const fade = window.Tier.expiryLabel(e);
     $("#detail-meta").textContent =
-      `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()} · ${window.Scenes.label(e.scene || "everyday")} · ${e.bucket}`;
+      `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()} · ${window.Scenes.label(e.scene || "everyday")} · ${e.bucket}`
+      + (fade ? ` · ${fade}` : "");
     $("#detail").classList.remove("hidden");
   }
 
@@ -808,51 +835,35 @@
     $("#timer-sheet").classList.remove("open");
   }
 
-  /* ---------- settings sheet ---------- */
-  function renderChips(sel, items, current, onPick) {
-    const box = $(sel);
-    box.innerHTML = "";
-    items.forEach(it => {
-      const b = document.createElement("button");
-      b.className = "chip" + (it === current ? " on" : "");
-      b.textContent = it;
-      b.onclick = () => { onPick(it); renderSettings(); };
-      box.appendChild(b);
-    });
-  }
+  /* ---------- settings sheet ----------
+     0016 — grouped readouts: plan / the guard / the app / filming. Rows that
+     hold a choice cycle it on tap; the value on the right is the whole UI. */
   function renderSettings() {
-    const sup = $("#voice-support");
-    sup.textContent = window.Voice.supported() ? "available" : "unsupported here";
-    sup.classList.toggle("ok", window.Voice.supported());
+    /* plan — stated as fact. StoreKit ties the purchase to the Apple ID, so
+       there is no account and nothing to sign into. */
+    const st = window.Tier.status();
+    $("#set-plan-k").textContent = st === "window-plus" ? "window+" : st === "trial" ? "free trial" : "free";
+    $("#set-plan-v").textContent =
+      st === "window-plus" ? "active"
+      : st === "trial" ? `${window.Tier.trialDaysLeft()} days of everything`
+      : "trial ended";
 
-    renderChips("#app-chips", Object.keys(APP_SCHEMES), settings.app, v => { settings.app = v; saveSettings(); });
+    /* the guard */
+    $("#set-watched-v").textContent = settings.app === "None" ? "none" : settings.app.toLowerCase();
+    $("#set-threshold-v").textContent = `${settings.timer} min`;
 
-    document.querySelectorAll("#pane-chips .chip").forEach(c => {
-      c.classList.toggle("on", c.dataset.panes === settings.panes);
-      c.onclick = () => {
-        settings.panes = c.dataset.panes; saveSettings(); renderSettings();
-        setPanes(settings.panes === "fade");
-      };
-    });
+    /* the app */
+    $("#voice-support").textContent = window.Voice.supported() ? "browser" : "unsupported here";
+    $("#set-panes-v").textContent = settings.panes === "fade" ? "fade away" : "keep them";
 
-    document.querySelectorAll("#director-chips .chip").forEach(c => {
-      const on = (c.dataset.director === "on");
-      c.classList.toggle("on", on === !!settings.director);
-      c.onclick = () => {
-        settings.director = on; saveSettings(); renderSettings();
-        if (!on) pinned = null;
-        renderPickbar();
-      };
-    });
+    /* filming */
+    const dv = $("#set-director-v");
+    dv.textContent = settings.director ? "on" : "off";
+    dv.classList.toggle("accent", !!settings.director);
+    const lv = $("#set-loop-v");
+    lv.textContent = settings.loop ? "loop" : "off";
+    lv.classList.toggle("accent", !!settings.loop);
 
-    document.querySelectorAll("#loop-chips .chip").forEach(c => {
-      const on = (c.dataset.loop === "on");
-      c.classList.toggle("on", on === !!settings.loop);
-      c.onclick = () => {
-        settings.loop = on; saveSettings(); renderSettings();
-        if (!on) clearTimeout(state.loopT);
-      };
-    });
     renderRollBar();
   }
   function openSettings() { renderSettings(); $("#sheet-back").classList.remove("hidden"); $("#settings-sheet").classList.add("open"); }
@@ -866,7 +877,8 @@
   $("#btn-skip").onclick = leaveToApp;
   $("#btn-retry-cam").onclick = () => startCamera(false);
   $("#btn-retake").onclick = retake;
-  $("#btn-done").onclick = backToWindow;
+  /* 0017 — "stay outside" closes the moment without handing the phone back */
+  $("#btn-done").onclick = goHome;
   $("#btn-share-now").onclick = () => shareEntry(state.lastEntry);
   $("#btn-continue").onclick = leaveToApp;
 
@@ -874,17 +886,52 @@
      shield deep link, which left the prototype with no way in at all. */
   $("#btn-open-window").onclick = () => {
     setMode("window");
+    resetCaptureUI();
     startCamera(true);
-    setTimeout(() => { $("#shade").classList.add("open"); setPanes(true); }, 480);
   };
-  $("#btn-roll-reset").onclick = () => { resetRoll(); renderRollBar(); };
+  $("#btn-roll-reset").onclick = () => { resetRoll(); renderRollBar(); renderIBar(); };
 
-  $("#btn-set-scene").onclick = openScenes;
-  $("#btn-set-timer").onclick = openTimer;
-  /* opening the archive develops the sheet — every time, because that beat is
-     the thing worth filming and there is no reason to ration it. */
+  $("#row-scene").onclick = openScenes;
+  $("#row-timer").onclick = openTimer;
+  $("#row-archive").onclick = openArchive;
+  /* the meter goes where the mic is */
+  $("#home-meter").onclick = openScenes;
+  /* opening the archive from the last window develops the sheet — every time,
+     because that beat is the thing worth filming. */
   $("#btn-lastpic").onclick = () => { state.justDeveloped = true; openArchive(); };
   $("#btn-settings").onclick = openSettings;
+
+  /* settings rows — tap cycles the value */
+  const cycle = (arr, cur) => arr[(arr.indexOf(cur) + 1) % arr.length];
+  $("#set-watched").onclick = () => {
+    settings.app = cycle(Object.keys(APP_SCHEMES), settings.app);
+    saveSettings(); renderSettings();
+  };
+  $("#set-threshold").onclick = () => {
+    settings.timer = cycle(TIMER_OPTIONS, settings.timer);
+    saveSettings(); renderSettings(); refreshHud();
+  };
+  $("#set-panes").onclick = () => {
+    settings.panes = settings.panes === "fade" ? "keep" : "fade";
+    saveSettings(); renderSettings();
+    setPanes(settings.panes === "fade");
+  };
+  $("#set-director").onclick = () => {
+    settings.director = !settings.director;
+    if (!settings.director) pinned = null;
+    saveSettings(); renderSettings(); renderPickbar();
+  };
+  $("#set-loop").onclick = () => {
+    settings.loop = !settings.loop;
+    if (!settings.loop) clearTimeout(state.loopT);
+    saveSettings(); renderSettings();
+  };
+  /* prototype: StoreKit isn't here, but the row must be (App Store law) */
+  $("#set-restore").onclick = () => {
+    const v = $("#set-restore-v");
+    v.textContent = "nothing to restore";
+    setTimeout(() => { v.textContent = "›"; }, 1800);
+  };
 
   $("#btn-scenes-back").onclick = backToWindow;
   $("#btn-mic").onclick = startVoice;
@@ -906,7 +953,12 @@
   };
 
   $("#btn-share-roll").onclick = shareRoll;
-  $("#btn-dev-close").onclick = () => { $("#develop").classList.add("hidden"); refreshHud(); };
+  /* a developed roll ends the sequence — the moment closes back to home */
+  $("#btn-dev-close").onclick = () => {
+    $("#develop").classList.add("hidden");
+    if (state.mode === "window") goHome();
+    else refreshHud();
+  };
 
   $("#sheet-back").onclick = closeSettings;
   $("#btn-clear").onclick = async () => {
@@ -915,10 +967,12 @@
     }
   };
 
-  /* the camera dies in the background — bring it back on return */
+  /* the camera dies in the background — bring it back on return, but only in
+     the moment: home has no live camera to restore */
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") {
-      if (state.opened && !state.captured && !document.querySelector(".panel.active")) {
+      if (state.mode === "window" && state.opened && !state.captured &&
+          !document.querySelector(".panel.active")) {
         startCamera(false);
       }
       refreshHud();
@@ -929,7 +983,7 @@
   });
 
   /* ---------- boot ---------- */
-  const BUILD = "app-v4";
+  const BUILD = "app-v5";
 
   if ("serviceWorker" in navigator) {
     /* updateViaCache:"none" stops Safari serving a stale sw.js out of the HTTP
@@ -957,7 +1011,8 @@
   $("#build-stamp").textContent = `${BUILD} · ${state.mode}`;
   console.log("[window] build " + BUILD + " · mode " + state.mode);
 
-  /* open straight into the live window; the veil only stays up if the browser
-     insists on a gesture, and then one tap does it */
-  openWindow(false);
+  /* the deep link goes straight for the live window (the veil only stays up
+     if the browser insists on a gesture). the app proper keeps its opening
+     ritual: the veil waits for the tap, then home — no camera involved. */
+  if (state.mode === "window") openWindow(false);
 })();
