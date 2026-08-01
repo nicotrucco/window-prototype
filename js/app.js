@@ -288,6 +288,12 @@
 
   function landPhrase(phrase, bucket, dataUrl) {
     $("#phrase-text").textContent = phrase;
+    /* 0016 — the folio numbers the window. mono, quiet, under the rule. */
+    const scene = window.Scenes.activeScene();
+    const n = getStreak();
+    $("#folio").textContent = scene && scene !== "everyday"
+      ? `${window.Scenes.label(scene)} · no. ${n || 1}`
+      : `no. ${n || 1}`;
     $("#scrim").classList.add("show");
     $("#phrase").classList.add("show");
 
@@ -310,11 +316,15 @@
       : "saved · stays on this device";
     $("#btn-share-now").classList.toggle("hidden", !!armed);
 
+    /* 0017 — "stay outside" is the primary now; the way back stays available
+       but stops shouting. 0003: the exit can never be a trap, so this button
+       is never removed for pressure, only for having nowhere to go. */
     const cont = $("#btn-continue");
     if (settings.app !== "None") {
       cont.textContent = `continue to ${settings.app.toLowerCase()}`;
       cont.classList.remove("hidden");
     } else cont.classList.add("hidden");
+    $("#btn-done").textContent = "stay outside";
 
     setTimeout(() => $("#hud-after").classList.remove("hidden"), 1100);
   }

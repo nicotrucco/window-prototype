@@ -40,19 +40,27 @@
       </div>
     </div>
 
-    <!-- a real window, photographed. the panes are keyed out so the camera
-         shows through. frame-open has the mullions cut away too, so crossfading
-         between the two is how the window opens up. -->
-    <img class="frame-img" id="frame-full" src="img/frame-tall.png" alt="" aria-hidden="true">
-    <img class="frame-img open" id="frame-open" src="img/frame-open-tall.png" alt="" aria-hidden="true">
+    <!-- 0016 · the instrument frame. hairline mullions and a thin sill, drawn
+         in CSS rather than photographed — nothing should obscure the shot.
+         Replaces four PNGs (1.14 MB); see 0010. -->
+    <div class="sill" aria-hidden="true"></div>
+    <div class="mull-live mull-live-v" aria-hidden="true"></div>
+    <div class="mull-live mull-live-h" aria-hidden="true"></div>
 
-    <!-- above the timber, so the mullions never cut the line in half -->
+    <!-- 0017 · portrait nudges you sideways. never blocks — rotation lock is
+         on for a lot of people, so portrait capture still works. -->
+    <div class="turn" id="turn" aria-hidden="true">
+      <span class="turn-glyph"></span>
+      <span class="turn-label">turn it sideways</span>
+    </div>
+
+    <!-- 0016 · broadsheet. the instant it freezes, type takes over. -->
     <div class="scrim" id="scrim"></div>
     <div class="phrase" id="phrase">
-      <svg class="spark" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M12 0 L14.2 9.8 L24 12 L14.2 14.2 L12 24 L9.8 14.2 L0 12 L9.8 9.8 Z"/>
-      </svg>
+      <span class="rule-t" aria-hidden="true"></span>
       <span id="phrase-text"></span>
+      <span class="rule-b" aria-hidden="true"></span>
+      <span class="folio" id="folio"></span>
     </div>
   </div>
 </div>
@@ -107,9 +115,12 @@
   <!-- ---- after the phrase lands ---- -->
   <div class="after hidden" id="hud-after">
     <p class="saved-note" id="saved-note">saved · stays on this device</p>
+    <!-- 0017 · this was backwards. the loudest button used to send you back to
+         the thing you were escaping. only the default flips — 0003 says the
+         way out can never be a trap, so "continue" survives, quietly. -->
     <div class="after-row">
-      <button class="btn glass-btn primary" id="btn-continue">continue</button>
-      <button class="btn glass-btn" id="btn-done">done</button>
+      <button class="btn glass-btn primary" id="btn-done">stay outside</button>
+      <button class="btn glass-btn quiet" id="btn-continue">continue</button>
     </div>
     <div class="after-row thin">
       <button class="textbtn" id="btn-share-now">share</button>
