@@ -668,12 +668,13 @@ body.shot #core-app, body.shot #core-window { display:none; }
   margin:0 .045em 0 .055em;   /* optical sidebearing: round letters need less */
   box-shadow:0 0 14px rgba(236,228,212,.35);
 }
-/* the mullions carry the same weight as the rim and stop at its inner edge —
-   absolute positioning resolves against the padding box, so they meet the
-   circle cleanly with no overshoot at the corners. */
+/* the rim is the letter — it carries type weight. the mullions are the WINDOW,
+   so they take the instrument's hairline instead: the same 1.5px thread that
+   crosses the live camera. Two jobs, two weights. Floored at 1px so they never
+   vanish at favicon scale. */
 .mini-o i { position:absolute; background:var(--frame); }
-.mini-o i:first-child { left:50%; top:0; bottom:0; width:.072em; transform:translateX(-50%); }
-.mini-o i:last-child  { top:50%; left:0; right:0; height:.072em; transform:translateY(-50%); }
+.mini-o i:first-child { left:50%; top:0; bottom:0; width:max(1px,.019em); transform:translateX(-50%); }
+.mini-o i:last-child  { top:50%; left:0; right:0; height:max(1px,.019em); transform:translateY(-50%); }
 .tagline {
   font-family:'Fraunces', serif; font-style:italic;
   color:var(--muted); font-size:17px; margin-top:14px;
