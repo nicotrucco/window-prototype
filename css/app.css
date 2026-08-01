@@ -651,10 +651,13 @@ body.shot #core-app, body.shot #core-window { display:none; }
   display:flex; align-items:baseline; justify-content:center;
 }
 .wordmark.big { font-size:46px; }
+/* the O in UCCO is the window, and it's round — a circle reads as the letter
+   AND as a porthole. The crossbars meet the rim exactly at its widest points,
+   so the 4-pane device and the last letter are one object. */
 .mini-o {
   display:inline-block; position:relative;
-  width:.58em; height:.66em; margin:0 .06em;
-  border:2px solid var(--frame); border-radius:4px;
+  width:.66em; height:.66em; margin:0 .04em;
+  border:2px solid var(--frame); border-radius:50%;
   align-self:center;
   box-shadow:0 0 14px rgba(236,228,212,.35);
 }
