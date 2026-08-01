@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>the moment</title>
+<meta name="theme-color" content="#060606">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="moment">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+
+<!-- Fraunces carries the phrase; Hanken the instrument. If the network is
+     down mid-shoot these fall back to system faces and the look collapses,
+     so the stacks below are chosen to degrade to something defensible. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,400..600&family=Hanken+Grotesk:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+/* ============================================================
+   THE MOMENT — one file, one job.
+
+   Built from zero for filming. The Shortcuts automation opens this,
+   the moment happens, a random line lands, it resets itself.
+
+   No home. No scenes. No archive. No settings. No tier. No director
+   mode — the phrase is ALWAYS random, never chosen.
+
+   0016 governs it: INSTRUMENT before the shutter, BROADSHEET after.
+   ============================================================ */
+:root{
+  --void:#060606;
+  --frame:#ECE4D4;
+  --text-hi:#F6EFDF;
+  --muted:#948B7E;
+  --coral:#EE7B54;
+  --ease:cubic-bezier(.22,.61,.36,1);
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --sans:'Hanken Grotesk',system-ui,-apple-system,sans-serif;
+  --serif:'Fraunces',ui-serif,Georgia,serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{
+  height:100%;background:var(--void);color:var(--frame);
+  font-family:var(--sans);overflow:hidden;overscroll-behavior:none;
+  -webkit-user-select:none;user-select:none;
+}
+
+/* ---------- the stage ---------- */
+#stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;}
+
+/* 3:2 in both orientations — it's the shape a contact sheet is made of.
+   Landscape is bigger, which is the entire reward for turning the phone. */
+.window{
+  position:relative;
+  width:min(88vw,58vh); aspect-ratio:3/2;
+  filter:drop-shadow(0 0 60px rgba(236,228,212,.12)) drop-shadow(0 18px 46px rgba(0,0,0,.7));
+  transition:width .6s var(--ease), filter .6s var(--ease);
+}
+@media (orientation:landscape){ .window{ width:min(94vw,156vh); } }
+
+.glass{position:absolute;inset:0;overflow:hidden;background:#0B0B0B;}
+.glass video,.glass img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+#freeze{display:none;}
+#freeze.show{display:block;}
+
+/* portrait dims the view — never blocks it. rotation lock is on for a lot of
+   people and an app that refuses to work until you rotate is broken. */
+@media (orientation:portrait){
+  body:not(.shot) .glass{filter:brightness(.6) saturate(.8);transition:filter .5s var(--ease);}
+}
+
+/* the shade lifts like a blind — the hero beat */
+.shade{position:absolute;inset:0;z-index:6;background:var(--void);
+  transform:translateY(0);transition:transform 1.25s var(--ease);}
+.shade.open{transform:translateY(-102%);}
+
+.flash{position:absolute;inset:0;z-index:7;background:var(--frame);opacity:0;pointer-events:none;}
+.flash.fire{animation:flash .42s var(--ease) both;}
+@keyframes flash{0%{opacity:0}18%{opacity:.92}100%{opacity:0}}
+
+/* ---------- INSTRUMENT — before the shutter ---------- */
+.sill{position:absolute;inset:0;z-index:3;border:4px solid var(--frame);pointer-events:none;}
+.mull{position:absolute;z-index:3;background:var(--frame);opacity:.92;pointer-events:none;
+  transition:opacity 1.1s var(--ease);}
+.mull-v{left:50%;top:0;bottom:0;width:1.5px;margin-left:-.75px;}
+.mull-h{top:50%;left:0;right:0;height:1.5px;margin-top:-.75px;}
+body.shot .mull{opacity:0;}
+
+.ticks{position:absolute;top:0;left:0;right:0;height:20px;z-index:4;opacity:.45;
+  pointer-events:none;
+  background:repeating-linear-gradient(90deg,rgba(236,228,212,.55) 0 1px,transparent 1px 12px);
+  -webkit-mask-image:linear-gradient(180deg,#000 30%,transparent);
+          mask-image:linear-gradient(180deg,#000 30%,transparent);
+  transition:opacity .4s var(--ease);}
+body.shot .ticks{opacity:0;}
+
+.ibar{position:fixed;left:0;right:0;bottom:0;z-index:11;display:flex;
+  justify-content:space-between;align-items:flex-end;
+  padding:26px 20px calc(env(safe-area-inset-bottom) + 14px);
+  background:linear-gradient(180deg,transparent,rgba(6,6,6,.88) 60%);
+  pointer-events:none;transition:opacity .45s var(--ease);}
+body.shot .ibar{opacity:0;}
+.ro{display:flex;flex-direction:column;gap:3px;font-family:var(--mono);
+  font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);}
+.ro.right{text-align:right;}
+.ro b{font-weight:400;color:var(--coral);}
+
+/* the shutter. a camera doesn't caption itself. */
+.shutter{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 40px);
+  transform:translateX(-50%);z-index:14;
+  width:66px;height:66px;border-radius:50%;border:1.5px solid rgba(236,228,212,.8);
+  background:transparent;cursor:pointer;transition:opacity .3s var(--ease),transform .12s var(--ease);}
+.shutter::after{content:"";position:absolute;inset:5px;border-radius:50%;background:var(--frame);}
+.shutter:active{transform:translateX(-50%) scale(.93);}
+body.shot .shutter{opacity:0;pointer-events:none;}
+@media (orientation:landscape){
+  .shutter{left:auto;right:calc(env(safe-area-inset-right) + 26px);bottom:50%;
+    transform:translateY(50%);}
+  .shutter:active{transform:translateY(50%) scale(.93);}
+}
+
+/* the turn cue — encourage, never force */
+.turn{position:fixed;left:0;right:0;bottom:calc(env(safe-area-inset-bottom) + 122px);
+  z-index:12;display:flex;flex-direction:column;align-items:center;gap:8px;
+  pointer-events:none;transition:opacity .4s var(--ease);}
+@media (orientation:landscape){ .turn{opacity:0;} }
+body.shot .turn{opacity:0;}
+.turn-glyph{width:15px;height:24px;border:1.5px solid var(--coral);border-radius:3px;}
+.turn-label{font-size:10px;letter-spacing:.26em;text-transform:uppercase;color:var(--coral);}
+@media (prefers-reduced-motion:no-preference){
+  .turn-glyph{animation:turnhint 3.2s var(--ease) infinite;}
+  @keyframes turnhint{0%,42%{transform:rotate(0)}66%,88%{transform:rotate(-90deg)}100%{transform:rotate(0)}}
+}
+
+/* ---------- BROADSHEET — after the shutter ---------- */
+.scrim{position:absolute;left:0;right:0;bottom:0;height:52%;z-index:4;
+  background:linear-gradient(to top,rgba(6,6,6,.88),rgba(6,6,6,.4) 58%,transparent);
+  opacity:0;transition:opacity .9s var(--ease);pointer-events:none;}
+body.shot .scrim{opacity:1;}
+@media (orientation:landscape){
+  .scrim{inset:0;height:auto;background:linear-gradient(90deg,rgba(6,6,6,.8),rgba(6,6,6,.25) 55%,transparent);}
+}
+
+.phrase{position:absolute;left:7%;right:7%;bottom:9%;z-index:5;
+  text-align:center;pointer-events:none;
+  font-family:var(--serif);font-style:italic;font-weight:500;
+  font-size:clamp(24px,7vw,44px);line-height:1.02;letter-spacing:-.025em;
+  color:var(--text-hi);text-shadow:0 1px 16px rgba(0,0,0,.75);
+  opacity:0;transform:translateY(10px);
+  transition:opacity 1s var(--ease),transform 1s var(--ease);}
+body.shot .phrase{opacity:1;transform:translateY(0);}
+@media (orientation:landscape){
+  .phrase{left:10%;right:10%;bottom:auto;top:50%;
+    transform:translateY(-50%) translateY(10px);font-size:clamp(24px,4.4vw,46px);}
+  body.shot .phrase{transform:translateY(-50%);}
+}
+
+/* the rules wipe outward from the centre once the line has landed */
+.rule{display:block;height:1px;margin:0 auto;background:rgba(246,239,223,.34);
+  transform:scaleX(0);transform-origin:center;
+  transition:transform 1.1s var(--ease) .35s;}
+.rule-t{margin-bottom:18px;} .rule-b{margin-top:18px;}
+body.shot .rule{transform:scaleX(1);}
+
+.folio{display:block;margin-top:14px;font-family:var(--sans);font-style:normal;
+  font-weight:500;font-size:9px;letter-spacing:.24em;text-transform:uppercase;
+  color:rgba(246,239,223,.5);opacity:0;transition:opacity .9s var(--ease) .6s;}
+body.shot .folio{opacity:1;}
+
+/* ---------- the veil. iOS needs a gesture before the camera opens. ---------- */
+.veil{position:fixed;inset:0;z-index:60;background:var(--void);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+  transition:opacity .9s var(--ease);}
+.veil.gone{opacity:0;pointer-events:none;}
+.veil-in{text-align:center;}
+.glyph{width:56px;height:56px;margin:0 auto 22px;position:relative;border:1.5px solid var(--frame);}
+.glyph::before,.glyph::after{content:"";position:absolute;background:var(--frame);}
+.glyph::before{left:50%;top:0;bottom:0;width:1.5px;margin-left:-.75px;}
+.glyph::after{top:50%;left:0;right:0;height:1.5px;margin-top:-.75px;}
+.veil-in p{font-family:var(--mono);font-size:10px;letter-spacing:.34em;
+  text-transform:uppercase;color:var(--muted);}
+
+.err{position:fixed;inset:0;z-index:40;display:none;flex-direction:column;
+  align-items:center;justify-content:center;gap:14px;padding:30px;text-align:center;}
+.err.show{display:flex;}
+.err p{font-size:14px;color:var(--muted);max-width:22em;line-height:1.6;}
+.err button{font-family:var(--sans);font-size:12px;letter-spacing:.2em;
+  text-transform:uppercase;padding:12px 22px;border:1px solid var(--frame);
+  background:transparent;color:var(--frame);border-radius:999px;cursor:pointer;}
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <div class="window">
+    <div class="glass">
+      <video id="cam" autoplay playsinline muted></video>
+      <img id="freeze" alt="">
+      <div class="shade" id="shade"></div>
+      <div class="flash" id="flash"></div>
+    </div>
+
+    <!-- instrument: hairline, nothing over the shot -->
+    <div class="sill"></div>
+    <div class="mull mull-v"></div>
+    <div class="mull mull-h"></div>
+    <div class="ticks"></div>
+
+    <!-- broadsheet: type takes over the instant it freezes -->
+    <div class="scrim"></div>
+    <div class="phrase">
+      <span class="rule rule-t"></span>
+      <span id="line"></span>
+      <span class="rule rule-b"></span>
+      <span class="folio" id="folio"></span>
+    </div>
+  </div>
+</div>
+
+<div class="turn"><span class="turn-glyph"></span><span class="turn-label">turn it sideways</span></div>
+
+<div class="ibar">
+  <div class="ro"><span>outside</span><b id="clock">—</b></div>
+  <div class="ro right"><span>frame</span><b id="frame">1 / 24</b></div>
+</div>
+
+<button class="shutter" id="shoot" aria-label="take the window"></button>
+
+<div class="veil" id="veil">
+  <div class="veil-in"><div class="glyph"></div><p>tap to open</p></div>
+</div>
+
+<div class="err" id="err">
+  <p>this needs the camera. allow access, then try again.</p>
+  <button id="retry">try again</button>
+</div>
+
+<script>
+(function(){
+  const $ = s => document.querySelector(s);
+
+  /* The bank. Always random, never chosen — that is the whole point: the line
+     is a gift you didn't pick, so it lands as a surprise on every take. */
+  const LINES = [
+    "this light is unreal",
+    "go touch something that isn't glass",
+    "the sky did that on its own",
+    "nothing out here is trying to sell you something",
+    "that's a real colour, not a filter",
+    "you were about to miss this",
+    "look how far away that is",
+    "the air is doing something today",
+    "none of this was buffering",
+    "this is happening whether you watch or not",
+    "everything here is full resolution",
+    "somebody built that a hundred years ago",
+    "no one made this for you and it's still good",
+    "that cloud is bigger than the building",
+    "you can hear it too, if you stop",
+    "this is the only place your eyes can focus far",
+    "the wind is free and it's right there",
+    "you'll forget this one, take it anyway",
+    "the day is doing fine without your input",
+    "keep looking, it's still going",
+    "that shadow will be gone in ten minutes",
+    "nothing out here refreshes",
+    "you don't have to do anything with this",
+    "it was worth turning the phone for"
+  ];
+
+  const ROLL = 24;
+  const rollN = () => {
+    const n = parseInt(localStorage.getItem("moment-roll") || "0", 10);
+    return isNaN(n) ? 0 : n;
+  };
+
+  /* don't repeat inside a filming session, or takes start echoing */
+  let recent = [];
+  function nextLine(){
+    const fresh = LINES.filter(l => !recent.includes(l));
+    const pool = fresh.length ? fresh : LINES;
+    const line = pool[Math.floor(Math.random() * pool.length)];
+    recent = [line, ...recent].slice(0, Math.floor(LINES.length / 2));
+    return line;
+  }
+
+  const state = { stream:null, shot:false, resetT:null };
+
+  function paintBar(){
+    const n = rollN();
+    $("#frame").textContent = ((n % ROLL) + 1) + " / " + ROLL;
+    const d = new Date();
+    $("#clock").textContent =
+      String(d.getHours()).padStart(2,"0") + ":" + String(d.getMinutes()).padStart(2,"0");
+  }
+
+  async function startCamera(){
+    stopCamera();
+    try{
+      state.stream = await navigator.mediaDevices.getUserMedia({
+        video:{ facingMode:{ ideal:"environment" }, width:{ideal:1920}, height:{ideal:1080} },
+        audio:false
+      });
+      $("#cam").srcObject = state.stream;
+      $("#err").classList.remove("show");
+      return true;
+    }catch(e){
+      $("#err").classList.add("show");
+      return false;
+    }
+  }
+  function stopCamera(){
+    if(state.stream){ state.stream.getTracks().forEach(t => t.stop()); state.stream = null; }
+  }
+
+  async function open(){
+    const ok = await startCamera();
+    $("#veil").classList.add("gone");
+    if(!ok) return;
+    paintBar();
+    /* the shade lifts — the hero beat, and the reason to film the open */
+    setTimeout(() => $("#shade").classList.add("open"), 260);
+  }
+
+  function shoot(){
+    if(state.shot) return;
+    const v = $("#cam");
+    if(!v.videoWidth) return;
+
+    /* freeze the exact frame, matched to the window's 3:2 crop */
+    const c = document.createElement("canvas");
+    const side = Math.min(v.videoWidth, v.videoHeight * 1.5);
+    c.width = Math.min(1620, side);
+    c.height = Math.round(c.width / 1.5);
+    const sw = v.videoHeight * 1.5 <= v.videoWidth ? v.videoHeight * 1.5 : v.videoWidth;
+    const sh = sw / 1.5;
+    c.getContext("2d").drawImage(v,
+      (v.videoWidth - sw)/2, (v.videoHeight - sh)/2, sw, sh, 0, 0, c.width, c.height);
+
+    $("#freeze").src = c.toDataURL("image/jpeg", .92);
+    $("#freeze").classList.add("show");
+    $("#flash").classList.add("fire");
+    setTimeout(() => $("#flash").classList.remove("fire"), 460);
+
+    const n = rollN() + 1;
+    localStorage.setItem("moment-roll", String(n));
+    const shotNo = ((n - 1) % ROLL) + 1;
+
+    $("#line").textContent = nextLine();
+    $("#folio").textContent = "frame " + shotNo + " of " + ROLL;
+
+    state.shot = true;
+    document.body.classList.add("shot");
+
+    /* it resets itself so takes run back to back, hands-free. this is the
+       whole reason the file exists. */
+    clearTimeout(state.resetT);
+    state.resetT = setTimeout(reset, 5200);
+  }
+
+  function reset(){
+    state.shot = false;
+    document.body.classList.remove("shot");
+    $("#freeze").classList.remove("show");
+    $("#shade").classList.remove("open");
+    paintBar();
+    setTimeout(() => $("#shade").classList.add("open"), 420);
+  }
+
+  $("#veil").onclick = open;
+  $("#shoot").onclick = shoot;
+  $("#retry").onclick = () => { $("#err").classList.remove("show"); open(); };
+  /* tap the frozen photo to move on early instead of waiting out the reset */
+  $("#stage").onclick = () => { if(state.shot){ clearTimeout(state.resetT); reset(); } };
+
+  window.addEventListener("orientationchange", () => setTimeout(paintBar, 300));
+  document.addEventListener("visibilitychange", () => {
+    /* WebKit mutes capture the moment the page backgrounds and only restarts
+       on return — so re-acquire rather than showing a dead black frame. */
+    if(document.visibilityState === "visible" && !state.shot && $("#veil").classList.contains("gone")){
+      startCamera();
+    }
+  });
+
+  paintBar();
+
+  /* If the automation deep-links straight in, try to open without the tap.
+     Safari will usually refuse without a gesture, and then the veil is the
+     fallback rather than a dead end. */
+  if(new URLSearchParams(location.search).has("auto")) open();
+})();
+</script>
+</body>
+</html>

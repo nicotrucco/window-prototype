@@ -13,6 +13,10 @@
   --scene:   #EE7B54;                    /* recoloured per armed scene */
   --ease:    cubic-bezier(.22,.61,.36,1);
 
+  /* 0016 · the instrument face. system mono, zero network — readouts, frame
+     numbers, folio furniture. the serif stays reserved for the phrase. */
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
   /* one cream scale. every warm-white in the app comes from here, so the
      timber, the mullions and the chips can never drift apart again. */
   --cream-1: #F6EFDF;
@@ -58,7 +62,11 @@ html, body {
 #stage {
   position:fixed; inset:0; z-index:0;
   display:flex; align-items:center; justify-content:center;
+  transition:opacity .6s var(--ease);
 }
+/* home is a readout over the void (0016) — the camera is not live there.
+   the stage only exists once the window is actually open. */
+body[data-mode="app"] #stage { opacity:0; }
 
 /* the window keeps the photograph's own proportions so the timber never
    stretches, sits as large as the screen allows, and leans right like a
@@ -99,21 +107,23 @@ html, body {
 /* ---- 0017 · landscape. shooting sideways breaks the doomscroll posture,
    and 3:2 is the shape the contact sheet is made of. ---- */
 @media (orientation: landscape) {
-  .window { width:min(94vw, 156vh); aspect-ratio:3 / 2; transform:rotate(0deg); }
-  .turn { display:none; }
+  .window { width:min(94vw, 156vh); aspect-ratio:3 / 2; transform:none; }
+  .turn { display:none !important; }
 }
-/* portrait: letterboxed and dim, never blocked */
+/* portrait, in the moment: letterboxed 3:2 and dimmed, never blocked — the
+   reward for rotating is that the window gets BIGGER. rotation lock is on for
+   a lot of people, so the shutter keeps working here (0017). */
 @media (orientation: portrait) {
-  body[data-mode="window"] .glass { filter:brightness(.62) saturate(.8); }
-  body[data-mode="window"] .window.open .glass { filter:none; }
+  body[data-mode="window"] .window { width:min(88vw, 58vh); aspect-ratio:3 / 2; transform:none; }
+  body[data-mode="window"]:not(.shot) .glass { filter:brightness(.62) saturate(.8); }
 }
 .turn {
-  position:absolute; left:0; right:0; bottom:-58px; z-index:8;
+  position:absolute; left:0; right:0; bottom:-64px; z-index:8;
   display:none; flex-direction:column; align-items:center; gap:8px;
   pointer-events:none;
 }
 body[data-mode="window"] .turn { display:flex; }
-body[data-mode="window"] .window.open .turn { display:none; }
+body.shot .turn { display:none; }
 .turn-glyph {
   width:15px; height:24px; border:1.5px solid var(--scene); border-radius:3px;
 }
@@ -130,6 +140,37 @@ body[data-mode="window"] .window.open .turn { display:none; }
     100%      { transform:rotate(0deg); }
   }
 }
+
+/* 0016 · the tick scale — a strip of hairline graduations fading down from
+   the head jamb. instrument chrome: it exists only while the camera is live. */
+.ticks {
+  position:absolute; top:0; left:0; right:0; height:22px;
+  z-index:4; display:none; opacity:.45; pointer-events:none;
+  background:repeating-linear-gradient(90deg, rgba(236,228,212,.55) 0 1px, transparent 1px 12px);
+  -webkit-mask-image:linear-gradient(180deg, #000 30%, transparent);
+          mask-image:linear-gradient(180deg, #000 30%, transparent);
+}
+body[data-mode="window"] .ticks { display:block; }
+body.shot .ticks { display:none; }
+
+/* 0016 · the instrument bar — mono readouts in one strip at the foot of the
+   screen. the only chrome the live view is allowed; broadsheet replaces it. */
+.ibar {
+  position:fixed; left:0; right:0; bottom:0; z-index:11;
+  display:none; justify-content:space-between; align-items:flex-end;
+  padding:26px 20px calc(env(safe-area-inset-bottom) + 12px);
+  background:linear-gradient(180deg, transparent, rgba(6,6,6,.88) 60%);
+  pointer-events:none;
+}
+body[data-mode="window"] .ibar { display:flex; }
+body.shot .ibar { display:none; }
+.ibar .ro {
+  display:flex; flex-direction:column; gap:3px;
+  font-family:var(--mono); font-size:10px; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--muted);
+}
+.ibar .ro.right { text-align:right; }
+.ibar .ro b { font-weight:400; color:var(--scene); }
 
 .glass {
   position:absolute; inset:0;
@@ -390,9 +431,13 @@ body[data-mode="window"] .window.open .turn { display:none; }
   display:flex; flex-direction:column;
   padding:calc(env(safe-area-inset-top) + 20px) 22px calc(env(safe-area-inset-bottom) + 24px);
   pointer-events:none;
-  opacity:0; transition:opacity .7s var(--ease);
+  opacity:0; transition:opacity .7s var(--ease), visibility 0s .7s;
+  /* visibility, not just opacity — WebKit composites backdrop-filter layers of
+     a transparent ancestor OVER the veil (seen on device: the glass squares
+     ghosting through the opening screen). hidden removes them entirely. */
+  visibility:hidden;
 }
-.hud.up { opacity:1; }
+.hud.up { opacity:1; visibility:visible; transition:opacity .7s var(--ease); }
 .hud > * { pointer-events:auto; }
 
 /* small controls take a small blur — a 22px blur on a 34px dot reaches well
@@ -410,81 +455,112 @@ body[data-mode="window"] .window.open .turn { display:none; }
   color:rgba(246,239,223,.72); font-size:15px; letter-spacing:.05em;
 }
 
-.stamp {
-  margin:auto auto 0; padding-bottom:14px;
-  font-size:11px; letter-spacing:.18em;
-  color:var(--scene); opacity:.85;
-  text-shadow:0 1px 10px rgba(0,0,0,.8);
+/* ---------------- HOME look ----------------
+   0016: a readout, not a dashboard. rows carry a mono value on the right; the
+   app states its status rather than decorating it. everything sits on the
+   void — the display face is saved for the moment itself. */
+.core {
+  position:fixed; inset:0; z-index:12;
+  display:flex; flex-direction:column;
+  padding:calc(env(safe-area-inset-top) + 24px) 26px calc(env(safe-area-inset-bottom) + 20px);
+  pointer-events:none;
+  animation:fadein .8s var(--ease) both;
+}
+.core > * { pointer-events:auto; }
+
+.home-hd {
+  display:flex; justify-content:space-between; align-items:baseline;
+  padding-right:46px;                    /* clears the settings dot */
+  font-family:var(--mono); font-size:10px; letter-spacing:.22em;
+  text-transform:uppercase; color:var(--muted);
+}
+.stamp { font-family:var(--mono); letter-spacing:.22em; color:var(--muted); }
+
+.home-rows { margin-top:26px; }
+.hrow {
+  display:flex; justify-content:space-between; align-items:center; gap:14px;
+  width:100%; padding:14px 2px;
+  background:none; border:0; border-bottom:1px solid var(--line);
+  cursor:pointer; text-align:left;
+}
+.hrow em {
+  font-family:'Fraunces', serif; font-style:italic;
+  font-size:17px; color:var(--text-hi);
+}
+.hrow em.danger { color:#c07a68; }
+.hrow i {
+  font-family:var(--mono); font-style:normal;
+  font-size:10px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--muted); text-align:right;
+}
+.hrow i.accent { color:var(--scene); }
+.hrow.static { cursor:default; }
+.hrow:active:not(.static) { background:rgba(255,255,255,.04); }
+
+/* last window — the way into the archive */
+.home-last {
+  margin-top:auto; margin-bottom:16px; width:100%;
+  background:none; border:0; padding:0; cursor:pointer; text-align:left;
+}
+.home-last-frame {
+  display:block; position:relative; aspect-ratio:3 / 2;
+  overflow:hidden; border-radius:3px; background:#0B0B0B;
+}
+.home-last-frame img {
+  width:100%; height:100%; object-fit:cover; display:block;
+}
+.hl-pane { position:absolute; background:var(--frame); opacity:.9; }
+.hl-pane-v { left:calc(50% - .75px); top:0; bottom:0; width:1.5px; }
+.hl-pane-h { top:calc(50% - .75px); left:0; right:0; height:1.5px; }
+.home-last-meta {
+  display:block; margin-top:8px;
+  font-family:var(--mono); font-size:9px; letter-spacing:.18em;
+  text-transform:uppercase; color:var(--muted);
 }
 
-/* ---------------- APP look ----------------
-   two big squares stacked, pinned dead centre of the screen whatever the
-   phone. they never move, so the thumb always knows where they are. */
-.core {
-  position:fixed;
-  top:50%; left:50%;
-  display:flex; flex-direction:column;
-  align-items:center; gap:16px;
-  z-index:12;
-  /* the centring lives in the keyframes. a plain `transform:translate(-50%,-50%)`
-     here gets overwritten by the animation's own transform under fill-mode both,
-     which drops the box to the bottom-right of centre. */
-  animation:fadeup-centre .8s var(--ease) both;
+/* the voice meter at the foot of home — a tape deck's input level, barely
+   moving. an instrument's input, never an orb. */
+.meter {
+  display:flex; align-items:center; gap:2px;
+  height:24px; width:128px; margin:16px auto 0;
+  background:none; border:0; padding:0; cursor:pointer;
 }
-.sq {
-  --lg-blur:30px;                        /* a big pane earns a deep blur */
-  width:clamp(128px, 38vw, 168px);
-  aspect-ratio:1;
-  border-radius:30px;
-  display:flex; flex-direction:column;
-  align-items:center; justify-content:center; gap:7px;
-  cursor:pointer;
-  transition:transform .22s var(--ease);
+.meter i {
+  flex:1; display:block; height:var(--h, 16%);
+  border-radius:.5px; background:var(--muted); opacity:.55;
 }
-.sq:active { transform:scale(.95); }
-.sq-k {
-  font-family:'Hanken Grotesk', sans-serif;
-  font-size:10.5px; letter-spacing:.2em;
-  color:rgba(246,239,223,.6);
+@media (prefers-reduced-motion: no-preference) {
+  .meter.idle i { animation:breathe 3.4s ease-in-out infinite; }
+  .meter i:nth-child(2n) { animation-delay:-.22s; }
+  .meter i:nth-child(3n) { animation-delay:-.41s; }
+  .meter i:nth-child(5n) { animation-delay:-.6s; }
 }
-.sq-v {
-  font-family:'Fraunces', serif; font-style:italic;
-  font-size:21px; line-height:1.15; color:var(--text-hi);
-  text-align:center; padding:0 10px;
-}
-/* armed — the scene colour runs round the rim as if lit from within */
-.sq.on::after {
-  background:linear-gradient(145deg,
-    color-mix(in srgb, var(--scene) 85%, white) 0%,
-    color-mix(in srgb, var(--scene) 62%, transparent) 30%,
-    color-mix(in srgb, var(--scene) 22%, transparent) 58%,
-    color-mix(in srgb, var(--scene) 70%, transparent) 100%);
-}
-.sq.on { box-shadow:
-  0 1px 1px rgba(255,255,255,.10),
-  0 10px 30px rgba(0,0,0,.44),
-  0 0 22px color-mix(in srgb, var(--scene) 26%, transparent); }
-.sq.on .sq-v { color:var(--scene); }
 
 /* ---------------- WINDOW look ----------------
-   the blocker. photo sits dead centre at the foot — centred on the screen,
-   not on the pair, so it stays put however wide "skip" happens to be. */
+   the blocker. the shutter sits dead centre at the foot — centred on the
+   screen, not on the pair, so it stays put however wide "skip" happens to be. */
 .shoot {
   position:fixed; left:0; right:0;
   bottom:calc(env(safe-area-inset-bottom) + 30px);
   height:78px; z-index:12;
   animation:fadeup .8s var(--ease) both;
 }
-.shoot-btn {
-  --lg-blur:20px;
-  position:absolute; left:50%; transform:translateX(-50%);
-  width:78px; height:78px; border-radius:50%;
-  font-family:'Hanken Grotesk', sans-serif;
-  font-weight:600; font-size:14px; letter-spacing:.04em;
+/* the shutter — a ring and a plate, like a camera. no glass, no label:
+   during the live view the instrument never decorates itself. */
+.shutter {
+  position:absolute; left:50%; top:0; transform:translateX(-50%);
+  width:70px; height:70px; border-radius:50%;
+  background:transparent; border:1.5px solid rgba(236,228,212,.85);
   cursor:pointer;
   transition:transform .2s var(--ease);
 }
-.shoot-btn:active { transform:translateX(-50%) scale(.94); }
+.shutter::after {
+  content:""; position:absolute; inset:6px; border-radius:50%;
+  background:var(--cream-2);
+  transition:transform .15s var(--ease);
+}
+.shutter:active { transform:translateX(-50%) scale(.96); }
+.shutter:active::after { transform:scale(.9); }
 .shoot-skip {
   --lg-blur:16px;
   position:absolute; left:50%; top:50%;
@@ -507,13 +583,12 @@ body[data-mode="window"] .window.open .turn { display:none; }
 .after-row { display:flex; gap:12px; align-items:center; }
 .after-row.thin { gap:22px; margin-top:2px; }
 
-.hud-foot { margin-top:auto; display:flex; align-items:flex-end; }
-
-/* ---------------- which look is on ---------------- */
+/* ---------------- which look is on ----------------
+   setMode() in js/app.js ALSO toggles .hidden on both cores — the attribute
+   selector alone lost on a real device (core-app ghosting into window mode),
+   so the mode is enforced in two places on purpose. */
 body[data-mode="app"]    #core-window { display:none; }
 body[data-mode="window"] #core-app    { display:none; }
-/* the blocker is a beat, not a place: no archive to wander into */
-body[data-mode="window"] .hud-foot    { display:none; }
 body[data-mode="window"] .dot         { opacity:.35; }
 body.shot #core-app, body.shot #core-window { display:none; }
 
@@ -528,7 +603,6 @@ body.shot #core-app, body.shot #core-window { display:none; }
 .btn:active { transform:scale(.96); }
 .btn.small { padding:11px 22px; font-size:14px; }
 .btn.wide { width:100%; margin-top:22px; }
-#btn-capture { flex:1; }
 
 .textbtn {
   background:none; border:none; cursor:pointer;
@@ -544,26 +618,6 @@ body.shot #core-app, body.shot #core-window { display:none; }
   font-size:11px; letter-spacing:.12em; color:rgba(246,239,223,.72);
   text-align:center; text-shadow:0 1px 8px rgba(0,0,0,.8);
 }
-
-/* last window — the way into the archive */
-.lastpic {
-  --lg-blur:15px;
-  width:52px; height:52px; flex:0 0 auto;
-  border-radius:14px; cursor:pointer; padding:3px;
-  transition:transform .22s var(--ease);
-}
-.lastpic:active { transform:scale(.94); }
-.lastpic img {
-  width:100%; height:100%; object-fit:cover;
-  border-radius:11px; display:none;
-}
-.lastpic img.show { display:block; }
-.lastpic-empty {
-  position:absolute; inset:3px;
-  border-radius:11px;
-  border:1px dashed rgba(255,255,255,.3);
-}
-.lastpic img.show + .lastpic-empty { display:none; }
 
 /* pickbar (director mode) */
 .pickbar {
@@ -586,7 +640,8 @@ body.shot #core-app, body.shot #core-window { display:none; }
   cursor:pointer;
   transition:opacity .9s var(--ease);
 }
-.veil.gone { opacity:0; pointer-events:none; }
+.veil { transition:opacity .9s var(--ease), visibility 0s .9s; }
+.veil.gone { opacity:0; pointer-events:none; visibility:hidden; }
 .veil-inner { text-align:center; animation:fadeup 1.4s var(--ease) both; }
 .wordmark {
   font-family:'Fraunces', serif; font-weight:500;
@@ -689,14 +744,23 @@ body.shot #core-app, body.shot #core-window { display:none; }
 .strip .fr.fading img { opacity:.55; }
 .fr-n {
   position:absolute; bottom:1px; right:3px; z-index:4;
-  font-family:'Hanken Grotesk', sans-serif; font-size:8px;
+  font-family:var(--mono); font-size:8px;
   color:var(--scene); opacity:.9;
 }
 .fr-fade {
   position:absolute; top:2px; left:3px; z-index:4;
-  font-family:'Hanken Grotesk', sans-serif; font-size:7px;
+  font-family:var(--mono); font-size:7px;
   letter-spacing:.08em; color:rgba(246,239,223,.75);
 }
+/* a cell the grid needs but the roll doesn't have — keeps strips of 3 square */
+.fr.pad { visibility:hidden; }
+.csheet-foot {
+  display:flex; justify-content:space-between; align-items:baseline;
+  padding:6px 2px 40px;
+  font-family:var(--mono); font-size:9px; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--muted);
+}
+.csheet-foot span:last-child { color:var(--accent); }
 /* the roll still filling. these do the work silently — no nag, no streak. */
 .fr.unexposed {
   background:#131210;
@@ -709,7 +773,7 @@ body.shot #core-app, body.shot #core-window { display:none; }
 /* develop — frames expose one at a time, the darkroom test-strip method:
    cover the sheet, expose a frame, find the exposure. GPU-cheap, no library. */
 @media (prefers-reduced-motion: no-preference) {
-  #archive-grid.developing .fr:not(.unexposed) {
+  .developing .fr:not(.unexposed) {
     animation:expose 1.1s var(--ease) var(--d, 0s) both;
   }
   @keyframes expose {
@@ -791,10 +855,7 @@ body[data-mode="window"] .rollbar { display:none; }
 .scene-foot { margin:26px 0 10px; text-align:center; font-size:11.5px; line-height:1.7; color:var(--muted); opacity:.7; }
 .arm-blurb { font-family:'Fraunces', serif; font-style:italic; color:var(--muted); font-size:15px; margin-top:-2px; }
 
-/* archive */
-.grid { display:grid; grid-template-columns:1fr 1fr; gap:22px 18px; padding-bottom:40px; }
-.thumb { cursor:pointer; }
-/* the archive's frame. Lit from the top-left like every other surface, and
+/* the detail frame. Lit from the top-left like every other surface, and
    drawn from the same cream scale as the mullions and the timber. */
 .winframe {
   background:linear-gradient(145deg, var(--cream-1) 0%, var(--cream-2) 46%, var(--cream-3) 100%);
@@ -803,15 +864,6 @@ body[data-mode="window"] .rollbar { display:none; }
              inset 0 -1px 0 rgba(140,126,102,.30),
              0 0 24px rgba(236,228,212,.08), 0 6px 20px rgba(0,0,0,.5);
 }
-.thumb .winframe { width:100%; aspect-ratio:3/4; }
-.thumb:nth-child(odd) .winframe  { transform:rotate(-2deg); }
-.thumb:nth-child(even) .winframe { transform:rotate(1.8deg); }
-.thumb .glass { border-radius:5px; box-shadow:none; }
-.thumb .mull-v { width:6px; margin-left:-3px; }
-.thumb .mull-h { height:6px; margin-top:-3px; }
-.thumb-date { text-align:center; font-size:10.5px; letter-spacing:.12em; color:var(--accent); margin-top:8px; }
-.empty { text-align:center; color:var(--muted); font-size:14px; margin-top:60px; }
-
 .locked-note { border:1px solid var(--line); border-radius:16px; padding:24px 20px; text-align:center; margin-bottom:26px; background:rgba(255,255,255,.03); box-shadow:inset 0 1px 0 rgba(255,255,255,.07); }
 .locked-title { font-family:'Fraunces', serif; font-style:italic; font-size:19px; color:var(--text-hi); }
 .locked-sub { font-size:12.5px; color:var(--muted); margin-top:8px; line-height:1.6; }
@@ -841,17 +893,13 @@ body[data-mode="window"] .rollbar { display:none; }
   font-family:'Fraunces', serif; font-style:italic; font-weight:500;
   font-size:27px; color:var(--text-hi); margin-top:8px; text-align:center;
 }
-.dev-grid {
-  display:grid; grid-template-columns:repeat(3,1fr);
-  gap:10px; margin:26px 0 18px; width:100%; max-width:330px;
+/* the develop moment reuses the contact-sheet strips; frames expose one at a
+   time via the .developing stagger above. tall rolls scroll inside the sheet. */
+.dev-strips {
+  width:100%; max-width:340px;
+  margin:24px 0 16px;
+  max-height:52vh; overflow-y:auto;
 }
-.dev-grid .winframe {
-  padding:4px; border-radius:7px; width:100%; aspect-ratio:3/4;
-  animation:develop .9s var(--ease) both;
-}
-.dev-grid .glass { border-radius:3px; box-shadow:none; }
-.dev-grid .mull-v { width:4px; margin-left:-2px; }
-.dev-grid .mull-h { height:4px; margin-top:-2px; }
 .dev-count { font-size:12px; letter-spacing:.18em; color:var(--scene); }
 
 /* ============ sheets ============ */
@@ -885,6 +933,15 @@ body[data-mode="window"] .rollbar { display:none; }
 .sheet-handle { width:38px; height:4px; border-radius:2px; background:rgba(236,228,212,.26); margin:0 auto 18px; }
 .sheet h3 { font-family:'Fraunces', serif; font-weight:500; font-size:20px; color:var(--text-hi); margin-bottom:6px; }
 .set-label { font-size:11px; letter-spacing:.2em; color:var(--muted); margin:22px 0 10px; }
+/* 0016 · grouped settings — a section eyebrow, then rows. same .hrow as home. */
+.grp {
+  font-family:var(--mono); font-size:9px; letter-spacing:.24em;
+  text-transform:uppercase; color:var(--muted); opacity:.7;
+  margin:22px 0 2px;
+}
+.set-rows .grp:first-child { margin-top:12px; }
+.set-rows .hrow { padding:12px 2px; }
+.set-rows .hrow em { font-size:15px; }
 .set-hint { font-size:11px; color:var(--muted); opacity:.65; margin-top:10px; line-height:1.6; }
 .pill {
   display:inline-block; margin-left:8px;
@@ -928,12 +985,8 @@ body[data-mode="window"] .rollbar { display:none; }
 
 /* ============ motion ============ */
 @keyframes fadeup { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
-/* same rise, but carrying the -50%/-50% centring through every frame */
-@keyframes fadeup-centre {
-  from { opacity:0; transform:translate(-50%, calc(-50% + 16px)); }
-  to   { opacity:1; transform:translate(-50%, -50%); }
-}
 @keyframes fadein { from { opacity:0; } to { opacity:1; } }
+@keyframes breathe { 0%,100% { transform:scaleY(1); } 50% { transform:scaleY(1.7); } }
 @keyframes pulse  { 0%,100% { opacity:.25; } 50% { opacity:.7; } }
 @keyframes sparkle {
   0%   { opacity:0; transform:scale(0) rotate(-40deg); }
@@ -947,18 +1000,22 @@ body[data-mode="window"] .rollbar { display:none; }
   to   { opacity:1; filter:none; transform:translateY(0); }
 }
 
-/* landscape / short screens — keep the window from crushing the controls */
-@media (max-height: 620px) {
+/* short PORTRAIT screens — keep the window from crushing the controls.
+   scoped to portrait on purpose: a short screen is usually a phone held
+   sideways, and unscoped this block used to override the landscape sizing —
+   the frame never opened to 3:2 and the phrase got both a top and a bottom,
+   stretching it. that was the intermittent layout breakage. */
+@media (max-height: 620px) and (orientation: portrait) {
   .window { width:min(90vw, 62vh); }
   .phrase { font-size:clamp(16px,4.2vw,22px); bottom:10%; }
-  .sq { width:clamp(92px, 26vw, 118px); border-radius:22px; font-size:15px; }
-  .core { gap:12px; }
   .btn { padding:13px 24px; font-size:15px; }
-  .lastpic { width:44px; height:44px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration:.15s !important; transition-duration:.2s !important; }
+  /* the develop stagger is animation-DELAY, which the line above doesn't
+     touch — without this the sheet trickles in over seconds of stillness */
+  .developing .fr:not(.unexposed) { animation:none !important; }
 }
 
 /* ============================================================

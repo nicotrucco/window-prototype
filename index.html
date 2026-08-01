@@ -47,6 +47,9 @@
     <div class="mull-live mull-live-v" aria-hidden="true"></div>
     <div class="mull-live mull-live-h" aria-hidden="true"></div>
 
+    <!-- 0016 · the tick scale — instrument chrome, gone the instant it freezes -->
+    <div class="ticks" aria-hidden="true"></div>
+
     <!-- 0017 · portrait nudges you sideways. never blocks — rotation lock is
          on for a lot of people, so portrait capture still works. -->
     <div class="turn" id="turn" aria-hidden="true">
@@ -86,27 +89,41 @@
 <div class="hud" id="hud">
   <button class="dot" id="btn-settings" aria-label="settings"><i aria-hidden="true">···</i></button>
 
-  <!-- ---- APP ---- -->
+  <!-- ---- HOME ---- 0016: a readout, not a dashboard. mono values on the
+       right, the display face saved for the moment itself. the camera is NOT
+       live here — the window opens when you open it. -->
   <div class="core" id="core-app">
-    <button class="sq glass-btn" id="btn-set-scene">
-      <span class="sq-k">set scene</span>
-      <span class="sq-v" id="sq-scene-v">none</span>
+    <p class="home-hd"><span>window</span><span class="stamp" id="stamp"></span></p>
+
+    <div class="home-rows">
+      <button class="hrow" id="row-scene"><em>set scene</em><i id="row-scene-v">none</i></button>
+      <button class="hrow" id="row-timer"><em>set timer</em><i id="row-timer-v">15 min</i></button>
+      <button class="hrow" id="row-archive"><em>archive</em><i id="row-archive-v">no windows</i></button>
+    </div>
+
+    <button class="home-last hidden" id="btn-lastpic" aria-label="your windows">
+      <span class="home-last-frame">
+        <img id="lastpic-img" alt="">
+        <span class="hl-pane hl-pane-v" aria-hidden="true"></span>
+        <span class="hl-pane hl-pane-h" aria-hidden="true"></span>
+      </span>
+      <span class="home-last-meta" id="home-last-meta">last window</span>
     </button>
-    <button class="sq glass-btn" id="btn-set-timer">
-      <span class="sq-k">set timer</span>
-      <span class="sq-v" id="sq-timer-v">15 min</span>
+
+    <!-- The shipping app only ever reaches the moment via the shield's deep
+         link. That left the prototype with no way in at all — you could not
+         take a photo. This is the filming door. -->
+    <button class="btn glass-btn primary open-window" id="btn-open-window">open the window</button>
+
+    <!-- 0017 · the roll of 24. it fills, it never breaks. -->
+    <div class="rollbar" id="rollbar" aria-hidden="true"></div>
+
+    <!-- the voice meter lives at the foot of home — an input level, never an
+         orb. it goes where the mic is. -->
+    <button class="meter idle" id="home-meter" aria-label="arm a scene by voice">
+      <i style="--h:12%"></i><i style="--h:18%"></i><i style="--h:13%"></i><i style="--h:24%"></i><i style="--h:15%"></i><i style="--h:21%"></i><i style="--h:12%"></i><i style="--h:19%"></i><i style="--h:23%"></i><i style="--h:14%"></i><i style="--h:20%"></i><i style="--h:12%"></i>
     </button>
   </div>
-
-  <!-- The shipping app only ever reaches the moment via the shield's deep
-       link. That left the prototype with no way in at all — you could not
-       take a photo. This is the filming door. -->
-  <button class="btn glass-btn primary open-window" id="btn-open-window">open the window</button>
-
-  <p class="stamp" id="stamp"></p>
-
-  <!-- 0017 · the roll of 24. it fills, it never breaks. -->
-  <div class="rollbar" id="rollbar" aria-hidden="true"></div>
 
   <!-- ---- DIRECTOR ---- filming affordance (0002), off by default -->
   <div class="pickbar hidden" id="pickbar">
@@ -114,9 +131,10 @@
     <div class="pickbar-chips" id="pickbar-list"></div>
   </div>
 
-  <!-- ---- WINDOW ---- photo dead centre at the foot, skip alongside -->
+  <!-- ---- WINDOW ---- instrument: shutter dead centre at the foot, skip
+       alongside. no label on the shutter — a camera doesn't caption itself. -->
   <div class="shoot" id="core-window">
-    <button class="shoot-btn glass-btn primary" id="btn-capture">photo</button>
+    <button class="shutter" id="btn-capture" aria-label="photo"></button>
     <button class="shoot-skip glass-btn" id="btn-skip">skip</button>
   </div>
 
@@ -136,11 +154,11 @@
     </div>
   </div>
 
-  <div class="hud-foot">
-    <button class="lastpic" id="btn-lastpic" aria-label="your windows">
-      <img id="lastpic-img" alt="">
-      <span class="lastpic-empty" id="lastpic-empty"></span>
-    </button>
+  <!-- 0016 · the instrument bar — one strip of mono readouts at the foot,
+       nothing over the shot. gone the instant the frame freezes. -->
+  <div class="ibar" id="ibar" aria-hidden="true">
+    <div class="ro"><span>scene</span><b id="ibar-scene">everyday</b></div>
+    <div class="ro right"><span>frame</span><b id="ibar-frame">1 / 24</b></div>
   </div>
 
 </div>
@@ -180,15 +198,19 @@
     <p class="locked-title">the roll is still in the camera</p>
     <p class="locked-sub">your <span id="locked-scene">going out</span> photos develop when the scene ends.</p>
   </div>
-  <div class="grid" id="archive-grid"></div>
-  <p class="empty hidden" id="archive-empty">no windows yet — go look outside.</p>
+  <!-- 0016 · the archive is a contact sheet: strips of 3 with sprocket
+       margins, frame numbers on the film base, unexposed cells for the roll
+       still filling. built in js/app.js. -->
+  <div class="csheet" id="archive-grid"></div>
+  <div class="csheet-foot"><span id="af-roll">roll no. 1</span><span id="af-count">0 / 24</span></div>
 </section>
 
 <!-- ============ DEVELOP ============ -->
 <div class="overlay hidden" id="develop">
   <p class="dev-kicker">developed</p>
   <h2 class="dev-title" id="dev-title">the going out roll</h2>
-  <div class="dev-grid" id="dev-grid"></div>
+  <!-- frames expose one at a time — the darkroom test-strip method -->
+  <div class="dev-strips" id="dev-grid"></div>
   <p class="dev-count" id="dev-count">6 windows</p>
   <div class="row center">
     <button class="btn glass-btn primary small" id="btn-share-roll">share the roll</button>
@@ -244,37 +266,32 @@
   <div class="sheet-handle"></div>
   <h3>settings</h3>
 
-  <p class="set-label">voice <span class="pill" id="voice-support">—</span></p>
-  <p class="set-hint">the prototype uses the browser's recogniser. the real app does this on-device.</p>
+  <!-- 0016 · grouped readouts: label left, mono value right. rows that hold a
+       choice cycle it on tap. restore purchases and terms · privacy are App
+       Store table stakes — missing either is an instant rejection. -->
+  <div class="set-rows">
+    <p class="grp">plan</p>
+    <div class="hrow static"><em id="set-plan-k">free</em><i id="set-plan-v">—</i></div>
+    <button class="hrow" id="set-restore"><em>restore purchases</em><i id="set-restore-v">›</i></button>
 
-  <p class="set-label">continue to</p>
-  <div class="chips" id="app-chips"></div>
+    <p class="grp">the guard</p>
+    <button class="hrow" id="set-watched"><em>watched app</em><i id="set-watched-v">instagram</i></button>
+    <button class="hrow" id="set-threshold"><em>threshold</em><i id="set-threshold-v">15 min</i></button>
 
-  <p class="set-label">panes</p>
-  <div class="chips" id="pane-chips">
-    <button class="chip" data-panes="fade">fade away</button>
-    <button class="chip" data-panes="keep">keep them</button>
+    <p class="grp">the app</p>
+    <div class="hrow static"><em>voice</em><i id="voice-support">—</i></div>
+    <button class="hrow" id="set-panes"><em>panes</em><i id="set-panes-v">fade away</i></button>
+    <button class="hrow" id="set-terms"><em>terms · privacy</em><i>›</i></button>
+
+    <p class="grp">filming</p>
+    <button class="hrow" id="set-director"><em>director</em><i id="set-director-v">off</i></button>
+    <button class="hrow" id="set-loop"><em>rehearse</em><i id="set-loop-v">off</i></button>
+    <button class="hrow" id="btn-roll-reset"><em>reset the roll</em><i id="roll-pill">0 / 24</i></button>
+    <button class="hrow" id="btn-clear"><em class="danger">clear all windows</em><i>›</i></button>
   </div>
+  <p class="set-hint">director pins one phrase so takes repeat · rehearse loops the moment hands-free. filming rig, not user features.</p>
 
-  <p class="set-label">director mode</p>
-  <div class="chips" id="director-chips">
-    <button class="chip" data-director="off">off</button>
-    <button class="chip" data-director="on">on</button>
-  </div>
-  <p class="set-hint">pin one phrase so every take repeats it. for filming — not a user feature.</p>
-
-  <p class="set-label">rehearse <span class="pill" id="roll-pill">—</span></p>
-  <div class="chips" id="loop-chips">
-    <button class="chip" data-loop="off">off</button>
-    <button class="chip" data-loop="on">loop the moment</button>
-  </div>
-  <p class="set-hint">the moment repeats hands-free and the roll fills, so you can shoot take after take.</p>
-  <button class="textbtn" id="btn-roll-reset">reset the roll</button>
-
-  <p class="set-label">archive</p>
-  <button class="textbtn danger" id="btn-clear">clear all windows</button>
-
-  <p class="version">window · <span id="build-stamp">—</span><br>everything stays on this device</p>
+  <p class="version">no account · everything stays on this device<br>window · <span id="build-stamp">—</span></p>
 </div>
 
 <script src="js/phrases.js"></script>

@@ -1,8 +1,9 @@
 /* Window — prototype app logic. Everything stays on this device.
    (Except browser speech recognition — see js/voice.js. Filming rig only.)
 
-   The camera stage is permanent: there is no "home screen". The phone is the
-   window for the whole session, and every surface floats over the live view. */
+   0016 changed the shape of the app: home is a readout over the void, and the
+   camera only goes live when the window is actually opened — instrument before
+   the shutter, broadsheet after it, the contact sheet for the archive. */
 
 (function () {
   const $ = s => document.querySelector(s);
@@ -61,7 +62,13 @@
   function setMode(m) {
     state.mode = m;
     document.body.dataset.mode = m;
+    /* belt and braces: the [data-mode] CSS alone lost on a real device —
+       core-app ghosted into window mode — so the mode is enforced here too.
+       .hidden carries !important and cannot be out-cascaded. */
+    $("#core-app").classList.toggle("hidden", m !== "app");
+    $("#core-window").classList.toggle("hidden", m !== "window");
     renderPickbar();
+    renderIBar();
   }
 
   /* ---------- tiny IndexedDB ---------- */
@@ -227,32 +234,36 @@
   }
 
   /* ---------- opening ----------
-     Go straight into the live window. Browsers only demand a user gesture for
-     the camera when permission hasn't been granted yet, so every run after the
-     first opens with no tap — which matters most for the blocker: it opens ON
-     you, it doesn't ask.
+     Home is a readout over the void — no camera. The blocker deep link
+     (?mode=window) still goes straight for the live window, because the
+     blocker opens ON you, it doesn't ask.
 
      (Don't gate this on navigator.permissions.query({name:"camera"}) — Safari
      doesn't implement it, so the promise rejects and the veil never lifts.) */
   async function openWindow(fromTap) {
     if (state.opened) return;
 
-    const ok = await startCamera(true);
-    if (!ok && !fromTap) {
-      /* needs a gesture — put it back the way it was and wait for the tap */
-      $("#shade").classList.remove("open");
-      $("#cam-error").classList.remove("show");
-      return;
+    if (state.mode === "window") {
+      const ok = await startCamera(true);
+      if (!ok && !fromTap) {
+        /* needs a gesture — put it back the way it was and wait for the tap */
+        $("#shade").classList.remove("open");
+        $("#cam-error").classList.remove("show");
+        return;
+      }
     }
 
     state.opened = true;
     $("#veil").classList.add("gone");
-    $("#hud").classList.add("up");
+    /* the HUD rises only after the veil has actually cleared — WebKit was
+       compositing the HUD's backdrop-filter layers over the veil on device */
+    setTimeout(() => $("#hud").classList.add("up"), 900);
     resetCaptureUI();
     window.warmClassifier();
     refreshHud();
   }
 
+  const DAY_NAMES = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
   function resetCaptureUI() {
     state.captured = false;
     state.lastEntry = null;
@@ -262,7 +273,8 @@
     $("#scrim").classList.remove("show");
     $("#hud-after").classList.add("hidden");
     const now = new Date();
-    $("#stamp").textContent = `${pad(now.getHours())}:${pad(now.getMinutes())} · today`;
+    $("#stamp").textContent = `${DAY_NAMES[now.getDay()]} · ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    renderIBar();
   }
 
   /* ---------- capture ---------- */
@@ -359,6 +371,23 @@
         }, 420);
       }, 4200);
     }
+
+    /* 0017 — frame 24 finishes the roll and it develops, right here. this
+       outranks the rehearse loop: a finished roll is the bigger moment. */
+    if (r.raw > 0 && r.n === 0) {
+      clearTimeout(state.loopT);
+      setTimeout(() => developCompletedRoll(r), 2600);
+    }
+  }
+
+  /* the instrument bar — live readouts for the moment: which scene is armed,
+     which frame the shutter is about to expose */
+  function renderIBar() {
+    const sceneEl = $("#ibar-scene"), frameEl = $("#ibar-frame");
+    if (!sceneEl || !frameEl) return;
+    sceneEl.textContent = window.Scenes.label(window.Scenes.activeScene());
+    const r = getRoll();
+    frameEl.textContent = `${Math.min(r.n + 1, ROLL_SIZE)} / ${ROLL_SIZE}`;
   }
 
   /* the roll, drawn as 24 cells that fill — the empty ones do the work */
@@ -384,47 +413,71 @@
   function leaveToApp() {
     const scheme = APP_SCHEMES[settings.app];
     if (scheme) location.href = scheme;
-    setTimeout(() => { setMode("app"); backToWindow(); }, 500);
+    setTimeout(goHome, 500);
   }
 
-  /* back to the live window */
+  /* back to where the current mode lives: the live window, or home */
   function backToWindow() {
     closePanels();
     resetCaptureUI();
-    if (!state.stream) startCamera(false);
+    if (state.mode === "window" && !state.stream) startCamera(false);
+    refreshHud();
+  }
+
+  /* the sequence ends where it began. "stay outside" lands here too — in the
+     shipping app it closes without lifting the shield; the prototype's nearest
+     honest gesture is putting the camera away and returning to the readout. */
+  function goHome() {
+    clearTimeout(state.loopT);
+    setMode("app");
+    stopCamera();
+    $("#shade").classList.remove("open");
+    setPanes(false);
+    closePanels();
+    resetCaptureUI();
     refreshHud();
   }
 
   /* ---------- the HUD ---------- */
+  const ago = iso => {
+    const m = Math.max(1, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+    if (m < 60) return `${m}m ago`;
+    const h = Math.round(m / 60);
+    if (h < 24) return `${h}h ago`;
+    return `${Math.round(h / 24)}d ago`;
+  };
+
   async function refreshHud() {
     paintScene();
     const armed = window.Scenes.current();
 
-    const sq = $("#btn-set-scene");
-    $("#sq-scene-v").textContent = armed ? window.Scenes.label(armed.scene) : "none";
-    sq.querySelector(".sq-k").textContent = armed ? window.Scenes.remainingLabel() : "set scene";
-    sq.classList.toggle("on", !!armed);
-
-    $("#sq-timer-v").textContent = `${settings.timer} min`;
+    const sceneV = $("#row-scene-v");
+    sceneV.textContent = armed ? window.Scenes.label(armed.scene) : "none";
+    sceneV.classList.toggle("accent", !!armed);
+    $("#row-timer-v").textContent = `${settings.timer} min`;
 
     const all = (await dbAll()).sort((a, b) => b.id - a.id);
     const visible = armed ? all.filter(e => e.rollId !== armed.rollId) : all;
-    const img = $("#lastpic-img");
+    $("#row-archive-v").textContent =
+      all.length === 0 ? "no windows" : all.length === 1 ? "1 window" : `${all.length} windows`;
+
+    const card = $("#btn-lastpic");
     if (visible.length) {
-      img.src = visible[0].dataUrl;
-      img.classList.add("show");
+      card.classList.remove("hidden");
+      $("#lastpic-img").src = visible[0].dataUrl;
+      $("#home-last-meta").textContent = `last window · ${ago(visible[0].createdAt)}`;
     } else {
-      img.classList.remove("show");
-      img.removeAttribute("src");
+      card.classList.add("hidden");
     }
+    renderRollBar();
+    renderIBar();
   }
 
   function startTick() {
     clearInterval(state.tick);
     state.tick = setInterval(() => {
-      const armed = window.Scenes.current();
-      const shown = $("#btn-set-scene").classList.contains("on");
-      if (armed || shown) { refreshHud(); renderScenes(); }
+      refreshHud();
+      if (document.querySelector("#scenes.active")) renderScenes();
     }, 20000);
   }
 
@@ -521,7 +574,38 @@
     if (done) developRoll(done);
   }
 
-  /* ---------- develop the roll ---------- */
+  /* ---------- develop the roll ----------
+     0016 — the develop moment IS the contact sheet: strips of three, frames
+     exposing one at a time on a stagger (the darkroom test-strip method,
+     via the .developing CSS). */
+  function buildDevStrips(entries) {
+    const grid = $("#dev-grid");
+    grid.innerHTML = "";
+    grid.classList.add("developing");
+    let strip = null;
+    entries.forEach((e, i) => {
+      if (i % 3 === 0) {
+        strip = document.createElement("div");
+        strip.className = "strip";
+        grid.appendChild(strip);
+      }
+      const cell = document.createElement("div");
+      cell.className = "fr";
+      cell.style.setProperty("--d", (i * 0.22) + "s");
+      cell.innerHTML = `
+        <img src="${e.dataUrl}" alt="">
+        <div class="mull mull-v"></div><div class="mull mull-h"></div>
+        <span class="fr-n">${i + 1}</span>`;
+      strip.appendChild(cell);
+    });
+    /* square off the last strip — film comes in threes even when you don't */
+    while (strip && strip.childElementCount % 3 !== 0) {
+      const pad = document.createElement("div");
+      pad.className = "fr pad";
+      strip.appendChild(pad);
+    }
+  }
+
   async function developRoll(roll) {
     const all = (await dbAll()).filter(e => e.rollId === roll.rollId).sort((a, b) => a.id - b.id);
     if (!all.length) return;
@@ -530,19 +614,19 @@
     $("#dev-title").textContent = `the ${window.Scenes.label(roll.scene)} roll`;
     $("#dev-count").textContent = `${all.length} window${all.length === 1 ? "" : "s"}`;
     document.documentElement.style.setProperty("--scene", window.Scenes.accent(roll.scene));
+    buildDevStrips(all);
+    $("#develop").classList.remove("hidden");
+  }
 
-    const grid = $("#dev-grid");
-    grid.innerHTML = "";
-    all.slice(0, 9).forEach((e, i) => {
-      const el = document.createElement("div");
-      el.className = "winframe";
-      el.style.animationDelay = (i * 90) + "ms";
-      el.innerHTML = `<div class="glass">
-          <img src="${e.dataUrl}" alt="">
-          <div class="mull mull-v"></div><div class="mull mull-h"></div>
-        </div>`;
-      grid.appendChild(el);
-    });
+  /* 0017 — frame 24 closes the roll of 24 and it develops on the spot */
+  async function developCompletedRoll(r) {
+    const entries = (await dbAll()).sort((a, b) => a.id - b.id).slice(-ROLL_SIZE);
+    if (!entries.length) return;
+    const armed = window.Scenes.current();
+    state.devRoll = { entries, scene: armed ? armed.scene : "everyday" };
+    $("#dev-title").textContent = `roll no. ${r.raw / ROLL_SIZE}`;
+    $("#dev-count").textContent = `${entries.length} windows`;
+    buildDevStrips(entries);
     $("#develop").classList.remove("hidden");
   }
 
