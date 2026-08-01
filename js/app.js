@@ -563,9 +563,26 @@
   }
 
   /* ---------- voice arming ---------- */
+
+  /* the shader visualiser. mounted lazily, and it only runs while listening —
+     a fragment shader per frame is not something to leave spinning. Returns
+     null with no WebGL, in which case the SVG mic underneath just stays put. */
+  let siri = null;
+  function micLive(on) {
+    const mic = $("#btn-mic");
+    mic.classList.toggle("live", on);
+    if (on && siri === null) {
+      const c = $("#mic-wave");
+      siri = c && window.SiriWave ? window.SiriWave.mount(c, { size: 76, palette: "brand" }) : false;
+    }
+    if (!siri) return;
+    on ? siri.start() : siri.stop();
+    mic.classList.toggle("shaded", on && siri.running);
+  }
+
   function resetVoiceUI() {
     const mic = $("#btn-mic");
-    mic.classList.remove("live");
+    micLive(false);
     mic.classList.toggle("dead", !window.Voice.supported());
     $("#voice-heard").textContent = "";
     $("#voice-prompt").textContent = window.Voice.supported()
@@ -581,7 +598,7 @@
       (scene, transcript, isFinal) => {
         $("#voice-heard").textContent = transcript ? `“${transcript}”` : "";
         if (scene) {
-          mic.classList.remove("live");
+          micLive(false);
           $("#voice-prompt").textContent = `${window.Scenes.label(scene)} —`;
           setTimeout(() => openArmSheet(scene), 420);
         } else if (isFinal && transcript) {
@@ -590,11 +607,11 @@
       },
       (st, msg) => {
         if (st === "listening") {
-          mic.classList.add("live");
+          micLive(true);
           $("#voice-prompt").textContent = "listening…";
           $("#voice-heard").textContent = "";
         } else {
-          mic.classList.remove("live");
+          micLive(false);
           if (st === "error") $("#voice-prompt").textContent = msg || "try again";
         }
       }

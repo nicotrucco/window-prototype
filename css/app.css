@@ -586,6 +586,18 @@ body.shot #core-app, body.shot #core-window { display:none; }
 }
 .mic:active { transform:scale(.95); }
 .mic svg { width:30px; height:30px; fill:currentColor; stroke:currentColor; }
+/* the shader visualiser sits inside the mic and crossfades with the glyph.
+   pointer-events off so the button still takes the tap. */
+#mic-wave {
+  position:absolute; left:50%; top:50%;
+  transform:translate(-50%,-50%);
+  opacity:0; pointer-events:none;
+  transition:opacity .28s var(--ease);
+}
+.mic.shaded #mic-wave { opacity:1; }
+.mic.shaded svg { opacity:0; transition:opacity .22s var(--ease); }
+.mic svg { transition:opacity .28s var(--ease); }
+
 .mic-ring { position:absolute; inset:-1px; border-radius:50%; border:1px solid var(--scene); opacity:0; }
 .mic.live { color:var(--scene); }
 /* listening — the rim takes the scene colour, matching an armed square */
