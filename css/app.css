@@ -661,6 +661,23 @@ body.shot #core-app, body.shot #core-window { display:none; }
 }
 .mic:active { transform:scale(.95); }
 .mic svg { width:30px; height:30px; fill:currentColor; stroke:currentColor; }
+/* the filming door into the moment */
+.open-window { margin:14px auto 0; display:block; }
+body[data-mode="window"] .open-window { display:none; }
+
+/* 0017 — the roll of 24. the empty cells do the work, silently. */
+.rollbar {
+  display:flex; gap:2px; justify-content:center;
+  margin:10px auto 0; max-width:220px;
+}
+.rollbar i {
+  flex:1; height:3px; border-radius:.5px;
+  background:rgba(236,228,212,.14);
+  transition:background .5s var(--ease);
+}
+.rollbar i.on { background:var(--scene); }
+body[data-mode="window"] .rollbar { display:none; }
+
 /* 0017 — the secondary exit. present, reachable, not shouting. */
 .glass-btn.quiet { opacity:.62; }
 .glass-btn.quiet:active { opacity:.85; }

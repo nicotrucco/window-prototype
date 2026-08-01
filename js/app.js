@@ -16,7 +16,22 @@
     None: null
   };
   const TIMER_OPTIONS = [5, 10, 15, 30, 45];
-  const DEFAULTS = { app: "Instagram", timer: 15, panes: "fade", director: false };
+  const DEFAULTS = { app: "Instagram", timer: 15, panes: "fade", director: false, loop: false };
+
+  /* ---------- the roll (0017) ----------
+     24 frames. It fills, it never breaks — miss a day and nothing is taken
+     away, the roll simply doesn't grow. Completion is the pull, not fear. */
+  const ROLL_SIZE = 24;
+  const getRoll = () => {
+    const n = parseInt(localStorage.getItem("window-roll-n") || "0", 10);
+    return { n: isNaN(n) ? 0 : n % ROLL_SIZE, no: Math.floor((isNaN(n) ? 0 : n) / ROLL_SIZE) + 1, raw: isNaN(n) ? 0 : n };
+  };
+  const bumpRoll = () => {
+    const r = getRoll();
+    localStorage.setItem("window-roll-n", String(r.raw + 1));
+    return getRoll();
+  };
+  const resetRoll = () => localStorage.setItem("window-roll-n", "0");
   let settings = { ...DEFAULTS, ...(JSON.parse(localStorage.getItem("window-app-settings") || "{}")) };
   const saveSettings = () => localStorage.setItem("window-app-settings", JSON.stringify(settings));
 
@@ -288,12 +303,14 @@
 
   function landPhrase(phrase, bucket, dataUrl) {
     $("#phrase-text").textContent = phrase;
-    /* 0016 — the folio numbers the window. mono, quiet, under the rule. */
+    /* 0016/0017 — the folio numbers the window, and the roll fills. */
     const scene = window.Scenes.activeScene();
-    const n = getStreak();
+    const r = bumpRoll();
+    const shot = r.n === 0 ? ROLL_SIZE : r.n;
     $("#folio").textContent = scene && scene !== "everyday"
-      ? `${window.Scenes.label(scene)} · no. ${n || 1}`
-      : `no. ${n || 1}`;
+      ? `${window.Scenes.label(scene)} · frame ${shot} of ${ROLL_SIZE}`
+      : `frame ${shot} of ${ROLL_SIZE}`;
+    renderRollBar();
     $("#scrim").classList.add("show");
     $("#phrase").classList.add("show");
 
@@ -327,6 +344,35 @@
     $("#btn-done").textContent = "stay outside";
 
     setTimeout(() => $("#hud-after").classList.remove("hidden"), 1100);
+
+    /* rehearse — the moment on repeat, hands-free, so takes can be shot back
+       to back without touching the phone. Filming rig only. */
+    if (settings.loop) {
+      clearTimeout(state.loopT);
+      state.loopT = setTimeout(() => {
+        if (!settings.loop || state.mode !== "window") return;
+        resetCaptureUI();
+        startCamera(true);
+        setTimeout(() => {
+          $("#shade").classList.add("open");
+          setPanes(true);
+        }, 420);
+      }, 4200);
+    }
+  }
+
+  /* the roll, drawn as 24 cells that fill — the empty ones do the work */
+  function renderRollBar() {
+    const bar = $("#rollbar");
+    if (!bar) return;
+    const r = getRoll();
+    const filled = r.n === 0 && r.raw > 0 ? ROLL_SIZE : r.n;
+    if (!bar.childElementCount) {
+      for (let i = 0; i < ROLL_SIZE; i++) bar.appendChild(document.createElement("i"));
+    }
+    [...bar.children].forEach((c, i) => c.classList.toggle("on", i < filled));
+    const pill = $("#roll-pill");
+    if (pill) pill.textContent = `${filled} / ${ROLL_SIZE}`;
   }
 
   function retake() {
@@ -688,6 +734,16 @@
         renderPickbar();
       };
     });
+
+    document.querySelectorAll("#loop-chips .chip").forEach(c => {
+      const on = (c.dataset.loop === "on");
+      c.classList.toggle("on", on === !!settings.loop);
+      c.onclick = () => {
+        settings.loop = on; saveSettings(); renderSettings();
+        if (!on) clearTimeout(state.loopT);
+      };
+    });
+    renderRollBar();
   }
   function openSettings() { renderSettings(); $("#sheet-back").classList.remove("hidden"); $("#settings-sheet").classList.add("open"); }
   function closeSettings() { $("#sheet-back").classList.add("hidden"); $("#settings-sheet").classList.remove("open"); }
@@ -703,6 +759,15 @@
   $("#btn-done").onclick = backToWindow;
   $("#btn-share-now").onclick = () => shareEntry(state.lastEntry);
   $("#btn-continue").onclick = leaveToApp;
+
+  /* the filming door — the shipping app reaches the moment only via the
+     shield deep link, which left the prototype with no way in at all. */
+  $("#btn-open-window").onclick = () => {
+    setMode("window");
+    startCamera(true);
+    setTimeout(() => { $("#shade").classList.add("open"); setPanes(true); }, 480);
+  };
+  $("#btn-roll-reset").onclick = () => { resetRoll(); renderRollBar(); };
 
   $("#btn-set-scene").onclick = openScenes;
   $("#btn-set-timer").onclick = openTimer;

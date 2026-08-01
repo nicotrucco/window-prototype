@@ -98,7 +98,15 @@
     </button>
   </div>
 
+  <!-- The shipping app only ever reaches the moment via the shield's deep
+       link. That left the prototype with no way in at all — you could not
+       take a photo. This is the filming door. -->
+  <button class="btn glass-btn primary open-window" id="btn-open-window">open the window</button>
+
   <p class="stamp" id="stamp"></p>
+
+  <!-- 0017 · the roll of 24. it fills, it never breaks. -->
+  <div class="rollbar" id="rollbar" aria-hidden="true"></div>
 
   <!-- ---- DIRECTOR ---- filming affordance (0002), off by default -->
   <div class="pickbar hidden" id="pickbar">
@@ -254,6 +262,14 @@
     <button class="chip" data-director="on">on</button>
   </div>
   <p class="set-hint">pin one phrase so every take repeats it. for filming — not a user feature.</p>
+
+  <p class="set-label">rehearse <span class="pill" id="roll-pill">—</span></p>
+  <div class="chips" id="loop-chips">
+    <button class="chip" data-loop="off">off</button>
+    <button class="chip" data-loop="on">loop the moment</button>
+  </div>
+  <p class="set-hint">the moment repeats hands-free and the roll fills, so you can shoot take after take.</p>
+  <button class="textbtn" id="btn-roll-reset">reset the roll</button>
 
   <p class="set-label">archive</p>
   <button class="textbtn danger" id="btn-clear">clear all windows</button>
