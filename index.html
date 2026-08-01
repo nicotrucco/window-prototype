@@ -92,6 +92,12 @@
 
   <p class="stamp" id="stamp"></p>
 
+  <!-- ---- DIRECTOR ---- filming affordance (0002), off by default -->
+  <div class="pickbar hidden" id="pickbar">
+    <p class="pickbar-label" id="pickbar-label">director</p>
+    <div class="pickbar-chips" id="pickbar-list"></div>
+  </div>
+
   <!-- ---- WINDOW ---- photo dead centre at the foot, skip alongside -->
   <div class="shoot" id="core-window">
     <button class="shoot-btn glass-btn primary" id="btn-capture">photo</button>
@@ -229,6 +235,13 @@
     <button class="chip" data-panes="fade">fade away</button>
     <button class="chip" data-panes="keep">keep them</button>
   </div>
+
+  <p class="set-label">director mode</p>
+  <div class="chips" id="director-chips">
+    <button class="chip" data-director="off">off</button>
+    <button class="chip" data-director="on">on</button>
+  </div>
+  <p class="set-hint">pin one phrase so every take repeats it. for filming — not a user feature.</p>
 
   <p class="set-label">archive</p>
   <button class="textbtn danger" id="btn-clear">clear all windows</button>

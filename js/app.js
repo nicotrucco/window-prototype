@@ -16,7 +16,7 @@
     None: null
   };
   const TIMER_OPTIONS = [5, 10, 15, 30, 45];
-  const DEFAULTS = { app: "Instagram", timer: 15, panes: "fade" };
+  const DEFAULTS = { app: "Instagram", timer: 15, panes: "fade", director: false };
   let settings = { ...DEFAULTS, ...(JSON.parse(localStorage.getItem("window-app-settings") || "{}")) };
   const saveSettings = () => localStorage.setItem("window-app-settings", JSON.stringify(settings));
 
@@ -46,6 +46,7 @@
   function setMode(m) {
     state.mode = m;
     document.body.dataset.mode = m;
+    renderPickbar();
   }
 
   /* ---------- tiny IndexedDB ---------- */
@@ -112,9 +113,51 @@
     const S = P[scene] || P[window.FALLBACK_SCENE];
     return S[bucket] || S.default || P[window.FALLBACK_SCENE].default;
   }
+  /* ---------- director mode (0002) ----------
+     filming affordance, not a user feature. auto-detection is non-deterministic
+     and you cannot shoot a take you can't repeat, so this pins one line and
+     returns it every capture until it's unpinned. */
+  let pinned = null;
+
+  function renderPickbar() {
+    const bar = $("#pickbar");
+    if (!bar) return;
+    if (!settings.director || state.mode !== "window") {
+      bar.classList.add("hidden");
+      return;
+    }
+    bar.classList.remove("hidden");
+
+    const scene = window.Scenes.activeScene();
+    /* before capture we don't know what the camera will see, so offer the
+       scene's default bank — that's what a repeatable take needs anyway */
+    const bank = bankFor(scene, "default");
+    const list = $("#pickbar-list");
+    list.innerHTML = "";
+
+    const shuffle = document.createElement("button");
+    shuffle.className = "chip" + (pinned ? "" : " on");
+    shuffle.textContent = "random";
+    shuffle.onclick = () => { pinned = null; renderPickbar(); };
+    list.appendChild(shuffle);
+
+    bank.forEach(p => {
+      const b = document.createElement("button");
+      b.className = "chip" + (p === pinned ? " on" : "");
+      b.textContent = p;
+      b.onclick = () => { pinned = (pinned === p ? null : p); renderPickbar(); };
+      list.appendChild(b);
+    });
+
+    $("#pickbar-label").textContent = pinned
+      ? `pinned · ${window.Scenes.label(scene)}`
+      : `director · ${window.Scenes.label(scene)}`;
+  }
+
   /* recent memory is per scene and never larger than half the bank,
      or `fresh` empties and lines repeat inside one filming session */
   function pickPhrase(bucket) {
+    if (settings.director && pinned) return pinned;
     const scene = window.Scenes.activeScene();
     const key = "window-recent-" + scene;
     const recent = JSON.parse(localStorage.getItem(key) || "[]");
@@ -609,6 +652,15 @@
       };
     });
 
+    document.querySelectorAll("#director-chips .chip").forEach(c => {
+      const on = (c.dataset.director === "on");
+      c.classList.toggle("on", on === !!settings.director);
+      c.onclick = () => {
+        settings.director = on; saveSettings(); renderSettings();
+        if (!on) pinned = null;
+        renderPickbar();
+      };
+    });
   }
   function openSettings() { renderSettings(); $("#sheet-back").classList.remove("hidden"); $("#settings-sheet").classList.add("open"); }
   function closeSettings() { $("#sheet-back").classList.add("hidden"); $("#settings-sheet").classList.remove("open"); }
