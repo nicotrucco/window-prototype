@@ -179,12 +179,34 @@ body.shot .folio{opacity:1;}
   transition:opacity .9s var(--ease);}
 .veil.gone{opacity:0;pointer-events:none;}
 .veil-in{text-align:center;}
-.glyph{width:56px;height:56px;margin:0 auto 22px;position:relative;border:1.5px solid var(--frame);}
-.glyph::before,.glyph::after{content:"";position:absolute;background:var(--frame);}
+/* the sign IS the instruction. it's the 4-pane device and a phone at once, and
+   it turns — so the flip happens BEFORE the camera opens and the shade lifts
+   into a full landscape frame. the gesture iOS demands becomes the ritual. */
+.glyph{width:52px;height:84px;margin:0 auto 26px;position:relative;
+  border:1.5px solid var(--frame);border-radius:5px;
+  transition:transform .7s var(--ease), width .7s var(--ease), height .7s var(--ease);}
+.glyph::before,.glyph::after{content:"";position:absolute;background:var(--frame);opacity:.9;}
 .glyph::before{left:50%;top:0;bottom:0;width:1.5px;margin-left:-.75px;}
 .glyph::after{top:50%;left:0;right:0;height:1.5px;margin-top:-.75px;}
+@media (prefers-reduced-motion:no-preference){
+  body:not(.turned) .glyph{animation:flipsign 3.4s var(--ease) infinite;}
+  @keyframes flipsign{
+    0%,38%{transform:rotate(0)}
+    62%,86%{transform:rotate(-90deg)}
+    100%{transform:rotate(0)}
+  }
+}
+/* once the phone is actually sideways the sign settles and grows into the
+   landscape shape — the reward, stated before you've even opened it */
+body.turned .glyph{animation:none;transform:none;width:96px;height:64px;}
+
 .veil-in p{font-family:var(--mono);font-size:10px;letter-spacing:.34em;
-  text-transform:uppercase;color:var(--muted);}
+  text-transform:uppercase;color:var(--muted);
+  transition:opacity .4s var(--ease);}
+.veil-in .sub{margin-top:10px;font-size:9px;letter-spacing:.28em;color:var(--coral);}
+body.turned .veil-in .sub{opacity:0;}
+.veil-in .go{opacity:0;margin-top:10px;font-size:9px;letter-spacing:.28em;color:var(--coral);}
+body.turned .veil-in .go, body.asked .veil-in .go{opacity:1;}
 
 .err{position:fixed;inset:0;z-index:40;display:none;flex-direction:column;
   align-items:center;justify-content:center;gap:14px;padding:30px;text-align:center;}
@@ -234,7 +256,12 @@ body.shot .folio{opacity:1;}
 <button class="shutter" id="shoot" aria-label="take the window"></button>
 
 <div class="veil" id="veil">
-  <div class="veil-in"><div class="glyph"></div><p>tap to open</p></div>
+  <div class="veil-in">
+    <div class="glyph"></div>
+    <p id="veil-line">turn it sideways</p>
+    <p class="sub">the window gets bigger</p>
+    <p class="go">tap to open</p>
+  </div>
 </div>
 
 <div class="err" id="err">
@@ -383,7 +410,24 @@ body.shot .folio{opacity:1;}
   /* tap the frozen photo to move on early instead of waiting out the reset */
   $("#stage").onclick = () => { if(state.shot){ clearTimeout(state.resetT); reset(); } };
 
-  window.addEventListener("orientationchange", () => setTimeout(paintBar, 300));
+  /* the sign watches the phone. once it's actually sideways the glyph settles
+     into the landscape shape and the copy switches to the tap. */
+  const land = window.matchMedia("(orientation: landscape)");
+  function readTurn(){
+    const on = land.matches;
+    document.body.classList.toggle("turned", on);
+    const l = $("#veil-line");
+    if (l) l.textContent = on ? "tap to open" : "turn it sideways";
+  }
+  if (land.addEventListener) land.addEventListener("change", readTurn);
+  else land.addListener(readTurn);
+  readTurn();
+
+  /* never a trap: if the phone never turns — rotation lock, a case, a table —
+     the tap becomes available on its own after a few seconds. */
+  setTimeout(() => document.body.classList.add("asked"), 4500);
+
+  window.addEventListener("orientationchange", () => setTimeout(() => { paintBar(); readTurn(); }, 300));
   document.addEventListener("visibilitychange", () => {
     /* WebKit mutes capture the moment the page backgrounds and only restarts
        on return — so re-acquire rather than showing a dead black frame. */
