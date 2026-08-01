@@ -560,22 +560,48 @@
     grid.innerHTML = "";
     $("#archive-empty").classList.toggle("hidden", visible.length > 0 || !!lockedCount);
 
-    visible.forEach(e => {
-      const d = new Date(e.createdAt);
-      const el = document.createElement("div");
-      el.className = "thumb" + (window.Tier.isFading(e) ? " fading" : "");
-      /* the countdown is the point — a photo that vanishes silently converts nobody */
+    /* 0016 — the archive is a contact sheet, not a grid of thumbnails.
+       Strips of three with sprocket margins, frame numbers on the film base,
+       and the unexposed cells left visibly empty: that is the roll still
+       filling, which a grid cannot express. */
+    const PER_STRIP = 3;
+    const roll = getRoll();
+    const cells = [];
+    visible.forEach(e => cells.push(e));
+    /* pad out to the end of the current roll so the empty frames show */
+    const shown = Math.min(cells.length, ROLL_SIZE);
+    const blanks = Math.max(0, Math.min(ROLL_SIZE, roll.raw === 0 ? ROLL_SIZE : ROLL_SIZE) - shown);
+    const total = shown + blanks;
+
+    let strip = null;
+    for (let i = 0; i < total; i++) {
+      if (i % PER_STRIP === 0) {
+        strip = document.createElement("div");
+        strip.className = "strip";
+        grid.appendChild(strip);
+      }
+      const e = cells[i];
+      const cell = document.createElement("div");
+      const n = i + 1;
+      if (!e) {
+        cell.className = "fr unexposed";
+        cell.innerHTML = `<span class="fr-n">${n}</span>`;
+        strip.appendChild(cell);
+        continue;
+      }
+      cell.className = "fr" + (window.Tier.isFading(e) ? " fading" : "");
+      cell.style.setProperty("--d", (i * 0.14) + "s");
       const fade = window.Tier.expiryLabel(e);
-      el.innerHTML = `
-        <div class="winframe"><div class="glass">
-          <img src="${e.dataUrl}" alt="">
-          <div class="mull mull-v"></div><div class="mull mull-h"></div>
-        </div></div>
-        <p class="thumb-date">${d.getDate()}/${d.getMonth() + 1} · ${pad(d.getHours())}:${pad(d.getMinutes())}</p>
-        ${fade ? `<p class="thumb-fade">${fade}</p>` : ""}`;
-      el.onclick = () => openDetail(e);
-      grid.appendChild(el);
-    });
+      cell.innerHTML = `
+        <img src="${e.dataUrl}" alt="">
+        <div class="mull mull-v"></div><div class="mull mull-h"></div>
+        <span class="fr-n">${n}</span>
+        ${fade ? `<span class="fr-fade">${fade}</span>` : ""}`;
+      cell.onclick = () => openDetail(e);
+      strip.appendChild(cell);
+    }
+    grid.classList.toggle("developing", state.justDeveloped);
+    state.justDeveloped = false;
 
     /* tier line in the header */
     const st = window.Tier.status();
@@ -771,7 +797,9 @@
 
   $("#btn-set-scene").onclick = openScenes;
   $("#btn-set-timer").onclick = openTimer;
-  $("#btn-lastpic").onclick = openArchive;
+  /* opening the archive develops the sheet — every time, because that beat is
+     the thing worth filming and there is no reason to ration it. */
+  $("#btn-lastpic").onclick = () => { state.justDeveloped = true; openArchive(); };
   $("#btn-settings").onclick = openSettings;
 
   $("#btn-scenes-back").onclick = backToWindow;
