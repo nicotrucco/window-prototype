@@ -30,11 +30,15 @@
    0016 governs it: INSTRUMENT before the shutter, BROADSHEET after.
    ============================================================ */
 :root{
+  /* 0018 · BEIGE ON BLACK. One hue family and nothing else — the coral is gone.
+     Hierarchy is value: --accent is simply the brightest cream in the room,
+     --muted the deepest taupe. If a thing isn't reading, the fix is contrast
+     or space, never a new swatch. */
   --void:#060606;
   --frame:#ECE4D4;
   --text-hi:#F6EFDF;
   --muted:#948B7E;
-  --coral:#EE7B54;
+  --accent:#F6EFDF;
   --ease:cubic-bezier(.22,.61,.36,1);
   --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
   --sans:'Hanken Grotesk',system-ui,-apple-system,sans-serif;
@@ -109,7 +113,7 @@ body.shot .ibar{opacity:0;}
 .ro{display:flex;flex-direction:column;gap:3px;font-family:var(--mono);
   font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);}
 .ro.right{text-align:right;}
-.ro b{font-weight:400;color:var(--coral);}
+.ro b{font-weight:400;color:var(--accent);}
 
 /* the shutter. a camera doesn't caption itself. */
 .shutter{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 40px);
@@ -125,14 +129,33 @@ body.shot .shutter{opacity:0;pointer-events:none;}
   .shutter:active{transform:translateY(50%) scale(.93);}
 }
 
+/* ---------- the keepsake ----------
+   Sits at the top, alone, because the broadsheet owns the bottom of the frame
+   in portrait and the shutter owns the right edge in landscape. One position
+   works in both, and it only ever exists after the shutter has fired. */
+.save{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 16px);
+  transform:translateX(-50%);z-index:15;
+  font-family:var(--sans);font-size:10px;font-weight:500;
+  letter-spacing:.28em;text-transform:uppercase;color:var(--frame);
+  padding:12px 24px;border-radius:999px;
+  border:1px solid rgba(236,228,212,.38);background:rgba(6,6,6,.42);
+  -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+  cursor:pointer;opacity:0;pointer-events:none;
+  transition:opacity .5s var(--ease),transform .12s var(--ease),color .3s var(--ease);}
+/* only once the image is actually composed — a save button that isn't ready
+   yet is worse than no button at all */
+body.shot .save.ready{opacity:1;pointer-events:auto;}
+.save:active{transform:translateX(-50%) scale(.95);}
+.save.done{color:var(--muted);border-color:rgba(148,139,126,.3);pointer-events:none;}
+
 /* the turn cue — encourage, never force */
 .turn{position:fixed;left:0;right:0;bottom:calc(env(safe-area-inset-bottom) + 122px);
   z-index:12;display:flex;flex-direction:column;align-items:center;gap:8px;
   pointer-events:none;transition:opacity .4s var(--ease);}
 @media (orientation:landscape){ .turn{opacity:0;} }
 body.shot .turn, body.asked .turn{opacity:0;pointer-events:none;}
-.turn-glyph{width:15px;height:24px;border:1.5px solid var(--coral);border-radius:3px;}
-.turn-label{font-size:10px;letter-spacing:.26em;text-transform:uppercase;color:var(--coral);}
+.turn-glyph{width:15px;height:24px;border:1.5px solid var(--accent);border-radius:3px;}
+.turn-label{font-size:10px;letter-spacing:.26em;text-transform:uppercase;color:var(--accent);}
 @media (prefers-reduced-motion:no-preference){
   .turn-glyph{animation:turnhint 3.2s var(--ease) infinite;}
   @keyframes turnhint{0%,42%{transform:rotate(0)}66%,88%{transform:rotate(-90deg)}100%{transform:rotate(0)}}
@@ -203,9 +226,9 @@ body.turned .glyph{animation:none;transform:none;width:96px;height:64px;}
 .veil-in p{font-family:var(--mono);font-size:10px;letter-spacing:.34em;
   text-transform:uppercase;color:var(--muted);
   transition:opacity .4s var(--ease);}
-.veil-in .sub{margin-top:10px;font-size:9px;letter-spacing:.28em;color:var(--coral);}
+.veil-in .sub{margin-top:10px;font-size:9px;letter-spacing:.28em;color:var(--accent);}
 body.turned .veil-in .sub{opacity:0;}
-.veil-in .go{opacity:0;margin-top:10px;font-size:9px;letter-spacing:.28em;color:var(--coral);}
+.veil-in .go{opacity:0;margin-top:10px;font-size:9px;letter-spacing:.28em;color:var(--accent);}
 body.turned .veil-in .go, body.asked .veil-in .go{opacity:1;}
 
 .err{position:fixed;inset:0;z-index:40;display:none;flex-direction:column;
@@ -254,6 +277,7 @@ body.turned .veil-in .go, body.asked .veil-in .go{opacity:1;}
 </div>
 
 <button class="shutter" id="shoot" aria-label="take the window"></button>
+<button class="save" id="save">save</button>
 
 <div class="veil" id="veil">
   <div class="veil-in">
@@ -360,7 +384,148 @@ body.turned .veil-in .go, body.asked .veil-in .go{opacity:1;}
     return line;
   }
 
-  const state = { stream:null, shot:false, resetT:null };
+  const state = { stream:null, shot:false, resetT:null, file:null, take:0 };
+
+  /* the button speaks whatever language the phrases are in */
+  const SAVE_COPY = LANG === "es"
+    ? { idle:"guardar", done:"guardada" }
+    : { idle:"save",    done:"saved" };
+
+  /* ============================================================
+     THE KEEPSAKE
+
+     iOS has exactly one route from a web page into the camera roll: the native
+     share sheet with a file attached, where "Save Image" appears. A download
+     link lands in Files, not Photos — so the sheet IS the mechanism, and the
+     fallback below only ever fires on desktop.
+
+     The image is composed the INSTANT the shutter fires and held ready,
+     because navigator.share has to be called straight out of the tap. Awaiting
+     a canvas encode inside the handler spends the user gesture and the sheet
+     then silently never opens.
+
+     What gets saved is the frame as shot — 3:2, phrase burned in. Not a social
+     crop: 0017 made the capture landscape for the contact sheet, so this is the
+     negative, and the open 9:16-vs-4:5 question stays where it belongs, at the
+     share sheet in the real app rather than pre-answered here.
+     ============================================================ */
+  async function readyFonts(){
+    if(!document.fonts) return;
+    try{
+      await Promise.all([
+        document.fonts.load("italic 500 76px Fraunces"),
+        document.fonts.load("500 21px 'Hanken Grotesk'")
+      ]);
+      await document.fonts.ready;
+    }catch(e){ /* degrades to Georgia / system — still legible */ }
+  }
+
+  function wrap(ctx, text, maxW){
+    const words = (text || "").split(/\s+/);
+    const lines = []; let line = "";
+    for(const w of words){
+      const test = line ? line + " " + w : w;
+      if(ctx.measureText(test).width > maxW && line){ lines.push(line); line = w; }
+      else line = test;
+    }
+    if(line) lines.push(line);
+    return lines;
+  }
+
+  /* canvas letterSpacing only landed in Safari 17.4, and the folio is the one
+     place the instrument voice has to survive. Draw it a glyph at a time. */
+  function tracked(ctx, text, cx, y, track){
+    const chars = [...text];
+    let w = -track;
+    for(const ch of chars) w += ctx.measureText(ch).width + track;
+    const prev = ctx.textAlign;
+    ctx.textAlign = "left";
+    let x = cx - w / 2;
+    for(const ch of chars){ ctx.fillText(ch, x, y); x += ctx.measureText(ch).width + track; }
+    ctx.textAlign = prev;
+  }
+
+  async function keepsake(frame, phrase, shotNo){
+    await readyFonts();
+    const W = 1620, H = 1080;
+    const c = document.createElement("canvas");
+    c.width = W; c.height = H;
+    const ctx = c.getContext("2d");
+
+    ctx.fillStyle = "#0B0B0B"; ctx.fillRect(0, 0, W, H);
+    if(frame) ctx.drawImage(frame, 0, 0, W, H);
+
+    /* the same scrim the screen showed */
+    const g = ctx.createLinearGradient(0, H * .42, 0, H);
+    g.addColorStop(0,   "rgba(6,6,6,0)");
+    g.addColorStop(.58, "rgba(6,6,6,.44)");
+    g.addColorStop(1,   "rgba(6,6,6,.90)");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, H * .42, W, H * .58);
+
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#F6EFDF";
+    const maxW = W * .76;
+    let size = 76;
+    ctx.font = `italic 500 ${size}px Fraunces, Georgia, serif`;
+    let lines = wrap(ctx, phrase, maxW);
+    while(lines.length > 3 && size > 46){
+      size -= 6;
+      ctx.font = `italic 500 ${size}px Fraunces, Georgia, serif`;
+      lines = wrap(ctx, phrase, maxW);
+    }
+
+    const lh        = size * 1.06;
+    const footY     = H - 58;
+    const lastBase  = footY - 74;
+    const firstBase = lastBase - (lines.length - 1) * lh;
+    lines.forEach((ln, i) => ctx.fillText(ln, W / 2, firstBase + i * lh));
+
+    /* the two hairline rules, set to the widest line */
+    const widest = Math.max.apply(null, lines.map(l => ctx.measureText(l).width));
+    const ruleW  = Math.min(maxW, widest + size * .6);
+    ctx.fillStyle = "rgba(246,239,223,.34)";
+    ctx.fillRect(W / 2 - ruleW / 2, firstBase - size * .96 - 28, ruleW, 1.5);
+    ctx.fillRect(W / 2 - ruleW / 2, lastBase + 30, ruleW, 1.5);
+
+    ctx.font = `500 21px 'Hanken Grotesk', system-ui, sans-serif`;
+    ctx.fillStyle = "rgba(246,239,223,.52)";
+    tracked(ctx, `UCCO · FRAME ${shotNo} OF ${ROLL}`, W / 2, footY, 5);
+
+    return new Promise(res => c.toBlob(res, "image/jpeg", .92));
+  }
+
+  function stamp(){
+    const d = new Date(), p = n => String(n).padStart(2, "0");
+    return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) +
+           "-" + p(d.getHours()) + p(d.getMinutes()) + p(d.getSeconds());
+  }
+
+  async function save(e){
+    e.stopPropagation();          /* a tap on the stage resets — this one must not */
+    const f = state.file;
+    if(!f) return;
+    const btn = $("#save");
+    /* the sheet backgrounds the page; never let the reset fire underneath it */
+    clearTimeout(state.resetT);
+    try{
+      if(navigator.canShare && navigator.canShare({ files:[f] })){
+        await navigator.share({ files:[f] });
+      }else{
+        const url = URL.createObjectURL(f);
+        const a = document.createElement("a");
+        a.href = url; a.download = f.name; a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 4000);
+      }
+      btn.textContent = SAVE_COPY.done;
+      btn.classList.add("done");
+    }catch(err){
+      /* AbortError — they backed out of the sheet. say nothing, offer it again. */
+    }
+    /* give the take its reset back either way, so filming stays hands-free */
+    clearTimeout(state.resetT);
+    state.resetT = setTimeout(reset, 4200);
+  }
 
   function paintBar(){
     const n = rollN();
@@ -427,20 +592,35 @@ body.turned .veil-in .go, body.asked .veil-in .go{opacity:1;}
     localStorage.setItem("moment-roll", String(n));
     const shotNo = ((n - 1) % ROLL) + 1;
 
-    $("#line").textContent = nextLine();
+    const line = nextLine();
+    $("#line").textContent = line;
     $("#folio").textContent = "frame " + shotNo + " of " + ROLL;
 
     state.shot = true;
     document.body.classList.add("shot");
 
+    /* compose the keepsake now, so the save tap has a file already waiting */
+    const take = ++state.take;
+    state.file = null;
+    keepsake(c, line, shotNo).then(blob => {
+      if(!blob || take !== state.take) return;   /* a newer take owns the screen */
+      state.file = new File([blob], "ucco-" + stamp() + ".jpg", { type:"image/jpeg" });
+      $("#save").classList.add("ready");
+    }).catch(function(){ /* no save offered, the take is unaffected */ });
+
     /* it resets itself so takes run back to back, hands-free. this is the
-       whole reason the file exists. */
+       whole reason the file exists — the extra beat is room to reach save. */
     clearTimeout(state.resetT);
-    state.resetT = setTimeout(reset, 5200);
+    state.resetT = setTimeout(reset, 6000);
   }
 
   function reset(){
     state.shot = false;
+    state.file = null;
+    state.take++;                       /* orphan any composite still encoding */
+    const btn = $("#save");
+    btn.classList.remove("ready", "done");
+    btn.textContent = SAVE_COPY.idle;
     document.body.classList.remove("shot");
     $("#freeze").classList.remove("show");
     $("#shade").classList.remove("open");
@@ -450,6 +630,8 @@ body.turned .veil-in .go, body.asked .veil-in .go{opacity:1;}
 
   $("#veil").onclick = open;
   $("#shoot").onclick = shoot;
+  $("#save").onclick = save;
+  $("#save").textContent = SAVE_COPY.idle;
   $("#retry").onclick = () => { $("#err").classList.remove("show"); open(); };
   /* tap the frozen photo to move on early instead of waiting out the reset */
   $("#stage").onclick = () => { if(state.shot){ clearTimeout(state.resetT); reset(); } };

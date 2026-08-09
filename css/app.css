@@ -3,14 +3,19 @@
    The phone IS the window: camera behind white-wood framing, always.
    ============================================================ */
 :root {
+  /* 0018 · BEIGE ON BLACK. One hue family, nothing else.
+     Hierarchy is carried by VALUE, never by hue — the accent is simply the
+     brightest cream in the room, and the quietest thing is the deepest taupe.
+     There is no second colour to reach for, so if something isn't reading,
+     the fix is contrast or space, not a new swatch. */
   --void:    #060606;
-  --void-2:  #101010;
+  --void-2:  #100F0E;                    /* warm near-black, never blue */
   --frame:   #ECE4D4;
   --text:    #ECE4D4;
   --text-hi: #F6EFDF;
   --muted:   #948B7E;
-  --accent:  #EE7B54;
-  --scene:   #EE7B54;                    /* recoloured per armed scene */
+  --accent:  #F6EFDF;                    /* the accent is light, not colour */
+  --scene:   #ECE4D4;                    /* re-valued per armed scene */
   --ease:    cubic-bezier(.22,.61,.36,1);
 
   /* 0016 · the instrument face. system mono, zero network — readouts, frame
@@ -22,6 +27,7 @@
   --cream-1: #F6EFDF;
   --cream-2: #ECE4D4;
   --cream-3: #DED4C0;
+  --cream-4: #B3A38B;                    /* the ramp's quiet end — 0018 */
   --line:    rgba(236,228,212,.13);      /* hairline on near-black */
   --line-2:  rgba(236,228,212,.22);
 
@@ -488,7 +494,10 @@ body.shot .ibar { display:none; }
   font-family:'Fraunces', serif; font-style:italic;
   font-size:17px; color:var(--text-hi);
 }
-.hrow em.danger { color:#c07a68; }
+/* 0018: with one hue there is no red to warn in. A destructive word is set in
+   the ramp's quiet end and underlined — the mark does the job the colour did. */
+.hrow em.danger { color:var(--cream-4); text-decoration:underline; text-underline-offset:3px;
+  text-decoration-thickness:from-font; }
 .hrow i {
   font-family:var(--mono); font-style:normal;
   font-size:10px; letter-spacing:.14em; text-transform:uppercase;
@@ -612,7 +621,8 @@ body.shot #core-app, body.shot #core-window { display:none; }
   letter-spacing:.06em; padding:6px 10px;
   text-shadow:0 1px 8px rgba(0,0,0,.7);
 }
-.textbtn.danger { color:#c07a68; }
+.textbtn.danger { color:var(--cream-4); text-decoration:underline; text-underline-offset:4px;
+  text-decoration-thickness:1px; }
 .textbtn.wide-text { display:block; width:100%; margin-top:10px; text-align:center; }
 
 .saved-note {
@@ -1046,7 +1056,7 @@ body[data-mode="window"] .rollbar { display:none; }
   }
   .glass-btn.primary { background:linear-gradient(158deg, var(--cream-1), var(--cream-2)); }
   .panel { background:rgba(6,6,6,.99); -webkit-backdrop-filter:none; backdrop-filter:none; }
-  .sheet { background:#111113; -webkit-backdrop-filter:none; backdrop-filter:none; }
+  .sheet { background:#100F0E;-webkit-backdrop-filter:none; backdrop-filter:none; }
   .sheet-back { background:rgba(6,6,6,.85); -webkit-backdrop-filter:none; backdrop-filter:none; }
 }
 
@@ -1063,7 +1073,7 @@ body[data-mode="window"] .rollbar { display:none; }
 
 /* no backdrop-filter at all — the material becomes a solid, nothing breaks */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .glass-btn, .lastpic, .dot, .mic { background:rgba(18,18,21,.93); }
+  .glass-btn, .lastpic, .dot, .mic { background:rgba(18,17,15,.93); }
   .panel { background:rgba(6,6,6,.98); }
-  .sheet { background:#111113; }
+  .sheet { background:#100F0E;}
 }

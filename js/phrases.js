@@ -6,19 +6,24 @@
    Voice belongs to the scene, not the user. There is no persona picker.
    Banks are deep on purpose — shallow banks repeat inside a single filming session. */
 
+/* 0018 · BEIGE ON BLACK. Scenes used to be told apart by hue — purple, blue,
+   amber, indigo. There is one hue now, so they're told apart by VALUE, and the
+   ladder isn't arbitrary: a scene's accent is as bright as the light that scene
+   actually happens in. Going out is lit; sleeping is nearly dark. The palette
+   describes the situation instead of just labelling it. */
 window.SCENES = {
   everyday: {
     label: "everyday",
     blurb: "the doomscroll timer's own voice",
     armable: false,            // always on, never armed
-    accent: "#EE7B54"
+    accent: "#ECE4D4"          // the base cream — the default voice
   },
   "going-out": {
     label: "going out",
     blurb: "for the night",
     armable: true,
     defaultHours: 5,
-    accent: "#C86BE0",
+    accent: "#F6EFDF",         // brightest — the night is lit
     say: ["going out", "i'm going out", "im going out", "night out", "salgo", "saliendo"]
   },
   studying: {
@@ -26,7 +31,7 @@ window.SCENES = {
     blurb: "lock in",
     armable: true,
     defaultHours: 3,
-    accent: "#5B9BD5",
+    accent: "#C3B79E",         // dim focus
     say: ["studying", "study", "i'm studying", "im studying", "deep work", "estudiando", "estudiar"]
   },
   dinner: {
@@ -34,7 +39,7 @@ window.SCENES = {
     blurb: "eat like a person",
     armable: true,
     defaultHours: 2,
-    accent: "#E0A85B",
+    accent: "#DBD0B9",         // warm low light
     say: ["dinner", "eating", "i'm eating", "im eating", "lunch", "comiendo", "almuerzo", "cena"]
   },
   sleeping: {
@@ -42,7 +47,7 @@ window.SCENES = {
     blurb: "put it down",
     armable: true,
     defaultHours: 9,
-    accent: "#6B7FE0",
+    accent: "#9C927F",         // dimmest — the room is dark
     say: ["sleeping", "sleep", "going to sleep", "bed", "bedtime", "durmiendo", "dormir"]
   }
 };

@@ -74,7 +74,7 @@
     return (window.SCENES[scene] && window.SCENES[scene].label) || scene;
   }
   function accent(scene) {
-    return (window.SCENES[scene] && window.SCENES[scene].accent) || "#EE7B54";
+    return (window.SCENES[scene] && window.SCENES[scene].accent) || "#ECE4D4";
   }
 
   /* match a spoken transcript against scene names + synonyms */

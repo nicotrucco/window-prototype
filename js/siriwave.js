@@ -8,9 +8,10 @@
    Three deliberate changes from the original:
 
    1. PALETTE. The original spectral4() is a full RGB rainbow, which fights a
-      brand built on the void + cream + ONE coral. `palette:"brand"` swaps it
-      for a cream→coral ramp. The chromatic aberration still works — it only
-      needs the four channels to differ, not to be a rainbow.
+      brand built on the void + cream and nothing else. `palette:"brand"` swaps
+      it for a cream→taupe ramp (0018 — beige on black, hierarchy by value).
+      The chromatic aberration still works — it only needs the four channels to
+      differ, not to be a rainbow.
    2. ALPHA. The original writes opaque black, so it renders as a black square.
       Here alpha tracks luminance and blending is premultiplied, so it sits on
       the void with no visible plate.
@@ -31,13 +32,15 @@ vec3 palette4(int s){
     return clamp(vec3(abs(x-3.0)-1.0, 2.0-abs(x-2.0), 2.0-abs(x-4.0)), 0.0, 1.0);
 }`;
 
-  /* cream -> coral. same job, inside the brand */
+  /* 0018 · cream -> taupe. The ramp used to run out to coral; with one hue it
+     runs DOWN THE VALUE SCALE instead. The chromatic aberration is unaffected —
+     it only needs the four channels to differ, and they still do. */
   const PALETTE_BRAND = `
 vec3 palette4(int s){
-    vec3 a = vec3(0.925, 0.894, 0.831);   /* #ECE4D4 frame cream */
-    vec3 b = vec3(0.980, 0.780, 0.550);   /* warm mid            */
-    vec3 c = vec3(0.933, 0.482, 0.329);   /* #EE7B54 coral       */
-    vec3 d = vec3(0.640, 0.220, 0.140);   /* ember               */
+    vec3 a = vec3(0.965, 0.937, 0.875);   /* #F6EFDF bright cream */
+    vec3 b = vec3(0.925, 0.894, 0.831);   /* #ECE4D4 frame cream  */
+    vec3 c = vec3(0.702, 0.639, 0.545);   /* #B3A38B quiet beige  */
+    vec3 d = vec3(0.400, 0.365, 0.318);   /* #665D51 deep taupe   */
     if(s == 0) return a;
     if(s == 1) return b;
     if(s == 2) return c;

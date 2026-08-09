@@ -11,7 +11,7 @@
    Registered with updateViaCache:"none" (see js/app.js) so sw.js itself is
    never served from the HTTP cache. */
 
-const BUILD = "app-v5";
+const BUILD = "app-v6";
 const CACHE = "window-" + BUILD;
 const CORE = [
   "./", "./index.html",
