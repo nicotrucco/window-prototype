@@ -10,6 +10,22 @@
   const FRAME = "#ECE4D4";
   const MUTED = "#948B7E";
 
+  /* 0005 — the furniture burned into the share image has to follow the locale
+     too. This composite IS the growth engine; a Chilean phrase sitting under
+     "ucco · look outside" reads as a half-translated app in the one place
+     strangers see the product. Read at call time, never cached, because
+     ?lang= is flipped mid-session while filming. */
+  const es = () => window.LOCALE === "es";
+  const T = {
+    foot:  () => es() ? "ucco · mira afuera" : "ucco · look outside",
+    /* the scene name arrives already localised from Scenes.label() */
+    scene: name => `ucco · ${name}`,
+    roll:  name => es() ? `el rollo de ${name}` : `the ${name} roll`,
+    count: n => es()
+      ? `${n} ventana${n === 1 ? "" : "s"}`
+      : `${n} window${n === 1 ? "" : "s"}`
+  };
+
   const loadImg = src => new Promise((res, rej) => {
     const i = new Image();
     i.onload = () => res(i);
@@ -143,8 +159,8 @@
     ctx.fillStyle = MUTED;
     ctx.globalAlpha = 0.75;
     const sceneName = entry.scene && entry.scene !== "everyday"
-      ? `ucco · ${window.Scenes.label(entry.scene)}`
-      : "ucco · look outside";
+      ? T.scene(window.Scenes.label(entry.scene))
+      : T.foot();
     ctx.fillText(sceneName.toLowerCase(), W / 2, H - 62);
     ctx.globalAlpha = 1;
 
@@ -192,18 +208,18 @@
     ctx.fillStyle = "#F6EFDF";
     ctx.font = `italic 500 54px Fraunces, Georgia, serif`;
     const name = window.Scenes.label(sceneKey || "everyday");
-    ctx.fillText(`the ${name} roll`, W / 2, Math.max(96, top - 58));
+    ctx.fillText(T.roll(name), W / 2, Math.max(96, top - 58));
 
     /* foot */
     ctx.font = `500 27px 'Hanken Grotesk', system-ui, sans-serif`;
     ctx.fillStyle = window.Scenes.accent(sceneKey);
     const n = entries.length;
-    ctx.fillText(`${n} window${n === 1 ? "" : "s"}`, W / 2, H - 108);
+    ctx.fillText(T.count(n), W / 2, H - 108);
 
     ctx.font = `500 24px 'Hanken Grotesk', system-ui, sans-serif`;
     ctx.fillStyle = MUTED;
     ctx.globalAlpha = 0.72;
-    ctx.fillText("ucco · look outside", W / 2, H - 60);
+    ctx.fillText(T.foot(), W / 2, H - 60);
     ctx.globalAlpha = 1;
 
     return c;

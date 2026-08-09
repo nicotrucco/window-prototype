@@ -497,8 +497,8 @@
       row.innerHTML = `
         <span class="scene-dot" style="background:${s.accent}"></span>
         <span class="scene-copy">
-          <span class="scene-name">${s.label}</span>
-          <span class="scene-blurb">${s.blurb}</span>
+          <span class="scene-name">${window.Scenes.label(key)}</span>
+          <span class="scene-blurb">${window.Scenes.blurb(key)}</span>
         </span>
         <span class="scene-state">${on ? window.Scenes.remainingLabel() : "start"}</span>`;
       row.onclick = () => on ? confirmDisarm() : openArmSheet(key);
@@ -515,8 +515,8 @@
   function openArmSheet(key) {
     state.pendingArm = key;
     const s = window.SCENES[key];
-    $("#arm-title").textContent = s.label;
-    $("#arm-blurb").textContent = s.blurb;
+    $("#arm-title").textContent = window.Scenes.label(key);
+    $("#arm-blurb").textContent = window.Scenes.blurb(key);
     document.documentElement.style.setProperty("--scene", s.accent);
 
     const box = $("#arm-duration");

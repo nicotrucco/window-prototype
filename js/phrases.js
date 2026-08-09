@@ -14,13 +14,17 @@
 window.SCENES = {
   everyday: {
     label: "everyday",
+    label_es: "el día a día",
     blurb: "the doomscroll timer's own voice",
+    blurb_es: "la voz del temporizador",
     armable: false,            // always on, never armed
     accent: "#ECE4D4"          // the base cream — the default voice
   },
   "going-out": {
     label: "going out",
+    label_es: "salir",
     blurb: "for the night",
+    blurb_es: "para la noche",
     armable: true,
     defaultHours: 5,
     accent: "#F6EFDF",         // brightest — the night is lit
@@ -28,7 +32,9 @@ window.SCENES = {
   },
   studying: {
     label: "studying",
+    label_es: "estudiando",
     blurb: "lock in",
+    blurb_es: "a concentrarse",
     armable: true,
     defaultHours: 3,
     accent: "#C3B79E",         // dim focus
@@ -36,7 +42,9 @@ window.SCENES = {
   },
   dinner: {
     label: "dinner",
+    label_es: "la comida",
     blurb: "eat like a person",
+    blurb_es: "come como persona",
     armable: true,
     defaultHours: 2,
     accent: "#DBD0B9",         // warm low light
@@ -44,7 +52,9 @@ window.SCENES = {
   },
   sleeping: {
     label: "sleeping",
+    label_es: "durmiendo",
     blurb: "put it down",
+    blurb_es: "déjalo ahí",
     armable: true,
     defaultHours: 9,
     accent: "#9C927F",         // dimmest — the room is dark
@@ -55,7 +65,7 @@ window.SCENES = {
 window.SCENE_KEYS = Object.keys(window.SCENES);
 window.ARMABLE_SCENES = window.SCENE_KEYS.filter(k => window.SCENES[k].armable);
 
-window.PHRASES = {
+window.PHRASES_EN = {
 
   /* ---------------------------------------------------------------- everyday
      warm, grounding. the voice people hear most — keep this the deepest bank. */
@@ -382,6 +392,378 @@ window.PHRASES = {
     ]
   }
 };
+
+/* ============================================================================
+   es-CL — the bank 0005 asked for on 2026-07-24 and nobody built.
+
+   "Chileno is a locale, not a scene. It re-voices EVERY scene." That means
+   five full banks, not one — which is why this took until now.
+
+   THESE ARE NOT TRANSLATIONS. A translated bank reads like a dubbed film: the
+   words land but the rhythm is somebody else's. Each line was rewritten to do
+   the same JOB as its English counterpart in the voice a Chilean would use, so
+   the counts match per bucket but the lines often don't correspond one to one.
+
+   Chilean, not neutral LATAM — the launch market should hear itself, not a
+   Miami voiceover. Voseo throughout where it falls naturally (tenís, sabís,
+   leís, seguís). "la pega", "penca", "al tiro", "harto", "crack", "bacán".
+   Deliberately NO "weón"/"weá": it is the most Chilean word there is and it
+   would cost the warmth the whole voice is built on. The register survives
+   0003 — push, never scold, and never imply the user failed.
+
+   One line is deliberately absent from every bucket here: the "touch grass"
+   construction. It's a competitor's app name (see the 2026-08-01 log) and the
+   English bank still carries it at everyday.green awaiting Nicolas's word.
+   No point creating the same problem twice.
+   ============================================================================ */
+window.PHRASES_ES = {
+
+  /* ---------------------------------------------------------------- everyday
+     tibia, con los pies en la tierra. la voz que más se escucha. */
+  everyday: {
+    sky: [
+      "esta luz está increíble, quédate en ella",
+      "mira un poquito más para arriba",
+      "el cielo hizo eso gratis",
+      "todo ese azul, para ti no más",
+      "las nubes andan lentas hoy, hazles caso",
+      "nada allá arriba anda apurado",
+      "cielo grande, feed chico",
+      "hay harto espacio allá arriba",
+      "el clima te hizo algo bonito",
+      "está despejado, tu cabeza también puede"
+    ],
+    sunset: [
+      "te pilló la hora dorada",
+      "quédate para la última luz",
+      "el día se está yendo suave, déjalo",
+      "este color no se va a repetir",
+      "el último truco del sol, mira",
+      "a esta hora todo se ve perdonado",
+      "un naranjo así dura un minuto",
+      "el cielo anda luciéndose, déjalo",
+      "pillaste la parte buena"
+    ],
+    water: [
+      "deja que se lleve el ruido",
+      "míralo moverse un rato",
+      "el agua sabe quedarse quieta",
+      "todo va a la deriva, tú también puedes",
+      "lleva todo el día haciendo eso sin ti",
+      "nada de eso necesita que lo arreglen"
+    ],
+    green: [
+      "acá afuera hay algo creciendo",
+      "el verde le hace bien a tus ojos",
+      "acá todo crece lento y está bien",
+      "llegó hasta acá sin revisar nada",
+      "verde tranquilo, cabeza tranquila",
+      "las hojas tampoco andan apuradas",
+      "toca algo que esté vivo"
+    ],
+    street: [
+      "la ciudad sigue despierta contigo",
+      "hoy la calle tiene mejores historias",
+      "alguien por ahí está teniendo su mejor día",
+      "acá todos andan en la mitad de algo",
+      "gente real, velocidad real",
+      "el barrio siguió sin el feed",
+      "pasan hartas cosas a la altura de los ojos"
+    ],
+    indoor: [
+      "tu mundito se ve tibio hoy",
+      "esta pieza te aguanta bien",
+      "con esta luz basta",
+      "la casa está haciendo su pega callada",
+      "este rincón lo armaste tú, míralo",
+      "acá adentro nada te está pidiendo nada",
+      "está más suave acá de lo que pensabas"
+    ],
+    food: [
+      "cómetelo mientras está caliente",
+      "más lento, sabe mejor",
+      "esto merece toda tu atención",
+      "alguien hizo eso, tú incluido",
+      "primero la comida, después el feed",
+      "mastica, en serio mastica"
+    ],
+    animal: [
+      "nunca se preocupan de los lunes",
+      "hay alguien feliz solo de verte",
+      "lo más suave de la pieza, mira",
+      "cero notificaciones en esa cabecita",
+      "ellos ya lo tienen resuelto"
+    ],
+    night: [
+      "el silencio es tuyo esta noche",
+      "descansar también es productivo",
+      "la oscuridad anda suave, déjala",
+      "aparecieron las estrellas, tú también",
+      "a esta hora no hay nada que decidir",
+      "el día ya dejó de pedir",
+      "tarde también puede ser tranquilo",
+      "acá afuera está más oscuro y más calmado"
+    ],
+    mountains: [
+      "llevan siglos ahí, tenís tiempo",
+      "piedras grandes, respiros hondos",
+      "el horizonte no se va a ir a ningún lado",
+      "nada tan viejo anda apurado"
+    ],
+    beach: [
+      "el aire salado arregla casi todo",
+      "la marea no se apura, ¿tú por qué?",
+      "el mar lleva su propio horario",
+      "lleva siglos llegando así"
+    ],
+    people: [
+      "el mejor feed está a la altura de los ojos",
+      "acá alguien se alegró de que miraras",
+      "estos son los de verdad",
+      "míralos a ellos mejor"
+    ],
+    default: [
+      "estás acá, con eso basta",
+      "un respiro y volvemos",
+      "mira un poquito más",
+      "el mundo siguió, qué bueno",
+      "este momento no estaba en tu feed",
+      "nada acá afuera te quiere retener",
+      "esa es la resolución de verdad",
+      "encontraste el afuera, bien ahí",
+      "estuvo acá todo este rato",
+      "nadie hizo esto para el engagement",
+      "seguís acá, seguís bien",
+      "ya estuvo bueno, mira para arriba"
+    ]
+  },
+
+  /* -------------------------------------------------------------- going out
+     energía de noche. la voz que era techno. */
+  "going-out": {
+    night: [
+      "la noche es un build-up largo, espérala",
+      "energía de las 4am, guarda un poco",
+      "el bajo está afuera esta noche",
+      "mañana no te vas a acordar de tu feed",
+      "la parte buena todavía no pasa",
+      "toda la gente que vale la pena está acá afuera",
+      "pieza oscura, gente real, anda",
+      "la noche no bufferea"
+    ],
+    street: [
+      "la ciudad tiene pulso, engánchate",
+      "la calle es la previa",
+      "todos acá afuera van a alguna parte",
+      "esta cuadra es el telonero",
+      "camínala, no la scrollees"
+    ],
+    sunset: [
+      "el sol está haciendo el warm-up",
+      "cuando termine eso, abren las puertas",
+      "la hora dorada es el primer track"
+    ],
+    indoor: [
+      "poca luz, buena gente, sin apuro",
+      "la pieza ya está buena",
+      "acá nadie está en el teléfono menos tú",
+      "esta es la parte que después todos suben"
+    ],
+    people: [
+      "salieron para esto, tú también",
+      "mira quién está acá de verdad",
+      "estas caras le ganan a cualquier feed"
+    ],
+    sky: [
+      "escenario al aire libre, sin cover",
+      "se voló el techo, mira"
+    ],
+    food: [
+      "come ahora, a las 3am te lo agradeces",
+      "carga bencina y anda"
+    ],
+    default: [
+      "suelta el teléfono, quédate con el drop",
+      "el after puede esperar, esto no",
+      "mundo real: el mejor set de la semana",
+      "ya saliste, entonces sal en serio",
+      "adentro no está pasando nada",
+      "la noche está justo ahí adelante",
+      "esta es la pieza, no esa",
+      "vas a querer haber estado acá",
+      "anda a estar en alguna parte",
+      "el feed va a seguir siendo penca mañana"
+    ]
+  },
+
+  /* --------------------------------------------------------------- studying
+     empuje, foco. la voz que era hype. */
+  studying: {
+    indoor: [
+      "sigue dándole, tú puedes",
+      "concéntrate, estás cerca",
+      "este escritorio es tu cancha",
+      "una página más y después miras",
+      "la pega está justo ahí, anda",
+      "hace noventa segundos estabas en flow",
+      "vuelve a la pega, crack",
+      "el tú del futuro está mirando esto"
+    ],
+    sky: [
+      "energía de día grande, anda a buscarlo",
+      "el cielo está despejado, tu cabeza también",
+      "resetea los ojos y después la concentración"
+    ],
+    food: [
+      "carga bencina y a todo chancho",
+      "come como si fuera día de pierna",
+      "recarga, no te disperses"
+    ],
+    night: [
+      "recupérate bien, gana mañana",
+      "dormir también es una repetición",
+      "sesión tarde, termínala limpia",
+      "un empujón más o un buen sueño, elige"
+    ],
+    green: [
+      "mira algo lejos y después vuelve",
+      "veinte segundos de verde y a la pega"
+    ],
+    street: [
+      "hoy la cuadra es tuya",
+      "la calle respeta al que se mueve"
+    ],
+    default: [
+      "vamos, crack",
+      "una repetición más de vida real",
+      "ojos arriba, pecho afuera",
+      "pásala y después celebras",
+      "no llegaste hasta acá para scrollear",
+      "eso fue el descanso, esto es la pega",
+      "estás más cerca de lo que el feed te hace sentir",
+      "anda a terminar la cuestión",
+      "nada de eso viene en la prueba",
+      "de vuelta. ahora."
+    ]
+  },
+
+  /* ----------------------------------------------------------------- dinner
+     seca, con ironía suave. la voz que era deadpan. */
+  dinner: {
+    food: [
+      "se está enfriando mientras leís esto",
+      "la comida está ahí. lleva rato ahí",
+      "sí, fotografíala. después cómetela",
+      "tu comida lleva rato esperando pacientemente",
+      "no sabe mejor a través de una pantalla",
+      "increíble. ahora usa el tenedor",
+      "el plato no se va a subir solo. qué bueno"
+    ],
+    indoor: [
+      "ah, sí, la pieza que estabas ignorando",
+      "una mesa. sillas. el método ancestral",
+      "esta cocina lleva todo este rato acá",
+      "mira esto: una pieza entera, sin publicidad"
+    ],
+    people: [
+      "esta gente vino a verte, aparentemente",
+      "alguien en esta mesa dijo algo. te lo perdiste",
+      "hay humanos acá. háblale a uno",
+      "contacto visual. atrevido, pero inténtalo"
+    ],
+    night: [
+      "está oscuro. anda a acostarte quizás",
+      "la noche está pasando sin ti"
+    ],
+    street: [
+      "autos. gente. realidad. tremendo"
+    ],
+    sky: [
+      "sí, ese es el cielo. lleva todo el día ahí",
+      "nubes. revolucionario."
+    ],
+    green: [
+      "eso es una planta. no tiene feed"
+    ],
+    default: [
+      "miraste para arriba. increíble",
+      "el mundo real: sigue en HD",
+      "con esto sueñan las pantallas de carga",
+      "no hay publicidad acá afuera. raro",
+      "felicitaciones por lo mínimo",
+      "acá nada se refresca. acostúmbrate",
+      "wow. un momento real. qué retro",
+      "sigue sin algoritmo. sigue estando bien",
+      "la pieza continúa existiendo",
+      "lo estás haciendo bien, supuestamente"
+    ]
+  },
+
+  /* --------------------------------------------------------------- sleeping
+     suave, literaria, de noche. la voz que era poeta. */
+  sleeping: {
+    night: [
+      "la noche te sostiene como un respiro guardado",
+      "la oscuridad no te pide nada",
+      "deja que el día cierre su propia puerta",
+      "todo lo que quedó a medias va a seguir ahí, más suave",
+      "la hora es tarde y es amable",
+      "esta noche no hay nada que resolver",
+      "el silencio te estaba esperando despierto",
+      "dormir no es rendirse, es volver"
+    ],
+    indoor: [
+      "la pieza se apaga sola para ti",
+      "estas paredes conocen la hora",
+      "una oscuridad chica y tibia, y tú adentro",
+      "la lámpara ya dijo suficiente"
+    ],
+    sky: [
+      "el cielo es una carta lenta, léela",
+      "la luz cae sin pedir que la miren",
+      "esa oscuridad de allá arriba es muy vieja y muy calmada"
+    ],
+    water: [
+      "el agua se escribe y se vuelve a escribir"
+    ],
+    green: [
+      "todo lo verde es una paciencia chica"
+    ],
+    default: [
+      "eres la ventana y también lo que se ve",
+      "la quietud también es un lugar",
+      "lo ordinario solo está sin leer",
+      "déjalo, el día se acabó",
+      "el mañana tiene sus propias citas",
+      "hoy ya no requiere nada más de ti",
+      "la pantalla es lo último despierto, y no debería",
+      "descansar es el final honesto",
+      "ciérralo. la noche basta",
+      "que lo último que veas sea real"
+    ]
+  }
+};
+
+/* ---------------------------------------------------------------- the locale
+   Chile ships first, so any es-* device gets Spanish. ?lang=en / ?lang=es
+   forces it, which is exactly what filming needs — the same contract
+   shoot.html already uses, so one URL habit covers both surfaces.
+
+   PHRASE_BANKS is the shape a third locale slots into. window.PHRASES stays
+   the single resolved bank every caller already reads, so nothing downstream
+   had to change. */
+window.PHRASE_BANKS = { en: window.PHRASES_EN, es: window.PHRASES_ES };
+
+window.LOCALE = (function () {
+  try {
+    const q = new URLSearchParams(location.search).get("lang");
+    if (q === "en" || q === "es") return q;
+  } catch (e) { /* no URLSearchParams, fall through to the device */ }
+  return (navigator.language || "en").toLowerCase().indexOf("es") === 0 ? "es" : "en";
+})();
+
+window.PHRASES = window.PHRASE_BANKS[window.LOCALE] || window.PHRASES_EN;
+document.documentElement.lang = window.LOCALE;
 
 /* voice inherited by a custom scene, or fallback for an unknown key */
 window.FALLBACK_SCENE = "everyday";

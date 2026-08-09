@@ -70,8 +70,20 @@
     return m ? `${h}h ${m}m left` : `${h}h left`;
   }
 
+  /* 0005: the locale re-voices every scene, and a Spanish phrase sitting under
+     an English scene name is a half-built locale. One accessor, so the sheets,
+     the archive and the burned-in share composite all follow it for free. */
   function label(scene) {
-    return (window.SCENES[scene] && window.SCENES[scene].label) || scene;
+    const s = window.SCENES[scene];
+    if (!s) return scene;
+    if (window.LOCALE === "es" && s.label_es) return s.label_es;
+    return s.label || scene;
+  }
+  function blurb(scene) {
+    const s = window.SCENES[scene];
+    if (!s) return "";
+    if (window.LOCALE === "es" && s.blurb_es) return s.blurb_es;
+    return s.blurb || "";
   }
   function accent(scene) {
     return (window.SCENES[scene] && window.SCENES[scene].accent) || "#ECE4D4";
@@ -97,6 +109,6 @@
 
   window.Scenes = {
     current, isArmed, activeScene, arm, disarm,
-    remainingMs, remainingLabel, label, accent, matchTranscript
+    remainingMs, remainingLabel, label, blurb, accent, matchTranscript
   };
 })();
