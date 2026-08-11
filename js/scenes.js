@@ -62,12 +62,12 @@
 
   function remainingLabel() {
     const ms = remainingMs();
-    if (ms === null) return "until you turn it off";
+    if (ms === null) return window.UI.t("until_you_end");
     const mins = Math.round(ms / 60000);
-    if (mins < 1) return "less than a minute left";
-    if (mins < 60) return `${mins} min left`;
+    if (mins < 1) return window.UI.t("less_than_min");
+    if (mins < 60) return window.UI.f("mins_left", mins);
     const h = Math.floor(mins / 60), m = mins % 60;
-    return m ? `${h}h ${m}m left` : `${h}h left`;
+    return m ? window.UI.f("hm_left", h, m) : window.UI.f("h_left", h);
   }
 
   /* 0005: the locale re-voices every scene, and a Spanish phrase sitting under

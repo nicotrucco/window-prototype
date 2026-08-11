@@ -15,7 +15,7 @@
      so the stacks below are chosen to degrade to something defensible. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,400..600&family=Hanken+Grotesk:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,400..600&family=Hanken+Grotesk:wght@400;500&family=Inter:wght@400;500&display=swap" rel="stylesheet">
 
 <style>
 /* ============================================================
@@ -43,6 +43,21 @@
   --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
   --sans:'Hanken Grotesk',system-ui,-apple-system,sans-serif;
   --serif:'Fraunces',ui-serif,Georgia,serif;
+}
+/* TYPE, ON TRIAL — ?type=times swaps the pairing to Inter + Times New Roman
+   (0019, proposed). Times is a real system face on iOS and Windows so it needs
+   no network at all; Inter comes from Google alongside the others. This is a
+   preview switch, not a decision: the default above is still the approved
+   Fraunces + Hanken until Nicolas calls it on a phone. */
+body.type-times{
+  --sans:'Inter',system-ui,-apple-system,sans-serif;
+  --serif:'Times New Roman',Times,ui-serif,Georgia,serif;
+}
+/* Times sets smaller on the same em and its italic is narrower than Fraunces',
+   so the phrase needs the size back or the line goes quiet under the scrim. */
+body.type-times .phrase{font-size:clamp(27px,7.9vw,50px);letter-spacing:-.012em;line-height:1.06;}
+@media (orientation:landscape){
+  body.type-times .phrase{font-size:clamp(27px,5vw,52px);}
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 html,body{
@@ -269,28 +284,32 @@ body.turned .veil-in .go, body.asked .veil-in .go{opacity:1;}
   </div>
 </div>
 
-<div class="turn"><span class="turn-glyph"></span><span class="turn-label">turn it sideways</span></div>
+<!-- The markup below is Spanish because Spanish is this file's DEFAULT (see the
+     LOCALE block in the script). dress() rewrites all of it from the string
+     table at boot; what's written here is only what a halted script would leave
+     on screen, and during a Chilean shoot that must not be English. -->
+<div class="turn"><span class="turn-glyph"></span><span class="turn-label">ponlo de lado</span></div>
 
 <div class="ibar">
-  <div class="ro"><span>outside</span><b id="clock">—</b></div>
-  <div class="ro right"><span>frame</span><b id="frame">1 / 24</b></div>
+  <div class="ro"><span>afuera</span><b id="clock">—</b></div>
+  <div class="ro right"><span>cuadro</span><b id="frame">1 / 24</b></div>
 </div>
 
-<button class="shutter" id="shoot" aria-label="take the window"></button>
-<button class="save" id="save">save</button>
+<button class="shutter" id="shoot" aria-label="tomar la ventana"></button>
+<button class="save" id="save">guardar</button>
 
 <div class="veil" id="veil">
   <div class="veil-in">
     <div class="glyph"></div>
-    <p id="veil-line">turn it sideways</p>
-    <p class="sub">the window gets bigger</p>
-    <p class="go">tap to open</p>
+    <p id="veil-line">ponlo de lado</p>
+    <p class="sub">la ventana se agranda</p>
+    <p class="go">toca para abrir</p>
   </div>
 </div>
 
 <div class="err" id="err">
-  <p>this needs the camera. allow access, then try again.</p>
-  <button id="retry">try again</button>
+  <p>esto necesita la cámara. dale acceso y vuelve a intentar.</p>
+  <button id="retry">reintentar</button>
 </div>
 
 <script>
@@ -359,15 +378,73 @@ body.turned .veil-in .go, body.asked .veil-in .go{opacity:1;}
     ]
   };
 
-  /* Chile ships first, so Spanish is the default for any es-* device.
-     ?lang=en / ?lang=es forces it, which is what filming needs. */
+  /* ============================================================
+     LOCALE — Spanish is the DEFAULT here, not a fallback.
+
+     This file exists to be filmed, the launch market is Chile, and the device
+     locale is the wrong authority: an English-set iPhone was showing English
+     chrome over a Chilean shoot. So es is the floor and ?lang=en is the way
+     out. The app (index.html) still reads the device — only the film surface
+     is pinned.
+     ============================================================ */
   const LANG = (() => {
     const q = new URLSearchParams(location.search).get("lang");
-    if (q === "en" || q === "es") return q;
-    return (navigator.language || "en").toLowerCase().startsWith("es") ? "es" : "en";
+    return (q === "en" || q === "es") ? q : "es";
   })();
   const LINES = BANK[LANG];
-  document.documentElement.lang = LANG;
+  document.documentElement.lang = LANG === "es" ? "es-CL" : "en";
+
+  /* Every user-visible string in the file. Nothing English may survive on
+     screen during an es take — one stray word costs the shot. */
+  const T = {
+    en: {
+      title:"UCCO — the moment",
+      turn:"turn it sideways", bigger:"the window gets bigger", tap:"tap to open",
+      outside:"outside", frameLabel:"frame",
+      folio:(n,t) => `frame ${n} of ${t}`,
+      stampFolio:(n,t) => `UCCO · FRAME ${n} OF ${t}`,
+      shutter:"take the window",
+      camErr:"this needs the camera. allow access, then try again.",
+      retry:"try again",
+      save:"save", saved:"saved"
+    },
+    es: {
+      title:"UCCO — el momento",
+      turn:"ponlo de lado", bigger:"la ventana se agranda", tap:"toca para abrir",
+      outside:"afuera", frameLabel:"cuadro",
+      folio:(n,t) => `cuadro ${n} de ${t}`,
+      stampFolio:(n,t) => `UCCO · CUADRO ${n} DE ${t}`,
+      shutter:"tomar la ventana",
+      camErr:"esto necesita la cámara. dale acceso y vuelve a intentar.",
+      retry:"reintentar",
+      save:"guardar", saved:"guardada"
+    }
+  }[LANG];
+
+  /* ?type=times previews 0019's pairing. One place defines it for CSS and for
+     the canvas, so the keepsake can never be set in a face the screen wasn't. */
+  const TYPE = (function(){
+    /* sticky, like ?lang= — the home-screen icon carries no query string */
+    let v = null;
+    try{
+      const q = new URLSearchParams(location.search).get("type");
+      if(q === "times" || q === "fraunces"){ v = q; localStorage.setItem("ucco-type", q); }
+      else v = localStorage.getItem("ucco-type");
+    }catch(e){ /* no storage — this launch only */ }
+    const times = v === "times";
+    if(times) document.body.classList.add("type-times");
+    return times
+      ? { serif:"'Times New Roman', Times, Georgia, serif",
+          sans:"'Inter', system-ui, sans-serif",
+          load:["italic 500 84px 'Times New Roman'", "500 21px Inter"],
+          /* Times runs smaller and narrower on the same em than Fraunces */
+          base:84, floor:52, track:1.03 }
+      : { serif:"Fraunces, Georgia, serif",
+          sans:"'Hanken Grotesk', system-ui, sans-serif",
+          load:["italic 500 76px Fraunces", "500 21px 'Hanken Grotesk'"],
+          base:76, floor:46, track:1.06 };
+  })();
+
   const ROLL = 24;
   const rollN = () => {
     const n = parseInt(localStorage.getItem("moment-roll") || "0", 10);
@@ -387,9 +464,21 @@ body.turned .veil-in .go, body.asked .veil-in .go{opacity:1;}
   const state = { stream:null, shot:false, resetT:null, file:null, take:0 };
 
   /* the button speaks whatever language the phrases are in */
-  const SAVE_COPY = LANG === "es"
-    ? { idle:"guardar", done:"guardada" }
-    : { idle:"save",    done:"saved" };
+  const SAVE_COPY = { idle:T.save, done:T.saved };
+
+  /* paint the chrome once, from the table, before anything is seen */
+  (function dress(){
+    document.title = T.title;
+    $(".turn-label").textContent = T.turn;
+    $("#veil-line").textContent  = T.turn;
+    $(".veil-in .sub").textContent = T.bigger;
+    $(".veil-in .go").textContent  = T.tap;
+    $(".ibar .ro span").textContent = T.outside;
+    $(".ibar .ro.right span").textContent = T.frameLabel;
+    $("#shoot").setAttribute("aria-label", T.shutter);
+    $("#err p").textContent = T.camErr;
+    $("#retry").textContent = T.retry;
+  })();
 
   /* ============================================================
      THE KEEPSAKE
@@ -412,10 +501,7 @@ body.turned .veil-in .go, body.asked .veil-in .go{opacity:1;}
   async function readyFonts(){
     if(!document.fonts) return;
     try{
-      await Promise.all([
-        document.fonts.load("italic 500 76px Fraunces"),
-        document.fonts.load("500 21px 'Hanken Grotesk'")
-      ]);
+      await Promise.all(TYPE.load.map(f => document.fonts.load(f)));
       await document.fonts.ready;
     }catch(e){ /* degrades to Georgia / system — still legible */ }
   }
@@ -466,16 +552,16 @@ body.turned .veil-in .go, body.asked .veil-in .go{opacity:1;}
     ctx.textAlign = "center";
     ctx.fillStyle = "#F6EFDF";
     const maxW = W * .76;
-    let size = 76;
-    ctx.font = `italic 500 ${size}px Fraunces, Georgia, serif`;
+    let size = TYPE.base;
+    ctx.font = `italic 500 ${size}px ${TYPE.serif}`;
     let lines = wrap(ctx, phrase, maxW);
-    while(lines.length > 3 && size > 46){
+    while(lines.length > 3 && size > TYPE.floor){
       size -= 6;
-      ctx.font = `italic 500 ${size}px Fraunces, Georgia, serif`;
+      ctx.font = `italic 500 ${size}px ${TYPE.serif}`;
       lines = wrap(ctx, phrase, maxW);
     }
 
-    const lh        = size * 1.06;
+    const lh        = size * TYPE.track;
     const footY     = H - 58;
     const lastBase  = footY - 74;
     const firstBase = lastBase - (lines.length - 1) * lh;
@@ -488,9 +574,9 @@ body.turned .veil-in .go, body.asked .veil-in .go{opacity:1;}
     ctx.fillRect(W / 2 - ruleW / 2, firstBase - size * .96 - 28, ruleW, 1.5);
     ctx.fillRect(W / 2 - ruleW / 2, lastBase + 30, ruleW, 1.5);
 
-    ctx.font = `500 21px 'Hanken Grotesk', system-ui, sans-serif`;
+    ctx.font = `500 21px ${TYPE.sans}`;
     ctx.fillStyle = "rgba(246,239,223,.52)";
-    tracked(ctx, `UCCO · FRAME ${shotNo} OF ${ROLL}`, W / 2, footY, 5);
+    tracked(ctx, T.stampFolio(shotNo, ROLL), W / 2, footY, 5);
 
     return new Promise(res => c.toBlob(res, "image/jpeg", .92));
   }
@@ -594,7 +680,7 @@ body.turned .veil-in .go, body.asked .veil-in .go{opacity:1;}
 
     const line = nextLine();
     $("#line").textContent = line;
-    $("#folio").textContent = "frame " + shotNo + " of " + ROLL;
+    $("#folio").textContent = T.folio(shotNo, ROLL);
 
     state.shot = true;
     document.body.classList.add("shot");
@@ -643,7 +729,7 @@ body.turned .veil-in .go, body.asked .veil-in .go{opacity:1;}
     const on = land.matches;
     document.body.classList.toggle("turned", on);
     const l = $("#veil-line");
-    if (l) l.textContent = on ? "tap to open" : "turn it sideways";
+    if (l) l.textContent = on ? T.tap : T.turn;
   }
   if (land.addEventListener) land.addEventListener("change", readTurn);
   else land.addListener(readTurn);

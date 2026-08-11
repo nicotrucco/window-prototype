@@ -16,7 +16,25 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..600;1,9..144,400..600&family=Hanken+Grotesk:wght@300..700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..600;1,9..144,400..600&family=Hanken+Grotesk:wght@300..700&family=Inter:wght@300..700&display=swap" rel="stylesheet">
+
+<!-- 0019 ON TRIAL · ?type=times previews Inter + Times New Roman against the
+     approved Fraunces + Hanken. Set before the stylesheet paints so there is no
+     flash of the other pairing, and read again by compose.js so a shared image
+     is never set in a face the screen wasn't. -->
+<script>
+  /* sticky like ?lang= — the home-screen icon carries no query string, so a
+     choice that doesn't persist can't survive a shoot */
+  (function () {
+    var KEY = "ucco-type", v = null;
+    try {
+      var q = new URLSearchParams(location.search).get("type");
+      if (q === "times" || q === "fraunces") { v = q; localStorage.setItem(KEY, q); }
+      else v = localStorage.getItem(KEY);
+    } catch (e) { /* no storage — this launch only */ }
+    if (v === "times") document.documentElement.classList.add("type-times");
+  })();
+</script>
 
 <link rel="stylesheet" href="css/app.css">
 </head>
@@ -34,9 +52,9 @@
       <div class="shade" id="shade"></div>
       <div class="flash" id="flash"></div>
       <div class="cam-error" id="cam-error">
-        <p>window needs the camera to open.</p>
-        <p class="sub">allow camera access, then try again.</p>
-        <button class="btn glass-btn small" id="btn-retry-cam">try again</button>
+        <p data-t="cam_need">window needs the camera to open.</p>
+        <p class="sub" data-t="cam_allow">allow camera access, then try again.</p>
+        <button class="btn glass-btn small" id="btn-retry-cam" data-t="retry">try again</button>
       </div>
     </div>
 
@@ -54,7 +72,7 @@
          on for a lot of people, so portrait capture still works. -->
     <div class="turn" id="turn" aria-hidden="true">
       <span class="turn-glyph"></span>
-      <span class="turn-label">turn it sideways</span>
+      <span class="turn-label" data-t="turn">turn it sideways</span>
     </div>
 
     <!-- 0016 · broadsheet. the instant it freezes, type takes over. -->
@@ -72,8 +90,8 @@
 <div class="veil" id="veil">
   <div class="veil-inner">
     <h1 class="wordmark big">ucc<span class="mini-o" aria-hidden="true"><i></i><i></i></span></h1>
-    <p class="tagline">look outside.</p>
-    <p class="hint">tap to open</p>
+    <p class="tagline" data-t="tagline">look outside.</p>
+    <p class="hint" data-t="tap_open">tap to open</p>
   </div>
 </div>
 
@@ -87,78 +105,78 @@
      straight into the blocker: index.html?mode=window
      ============================================================ -->
 <div class="hud" id="hud">
-  <button class="dot" id="btn-settings" aria-label="settings"><i aria-hidden="true">···</i></button>
+  <button class="dot" id="btn-settings" data-t-aria="aria_settings" aria-label="settings"><i aria-hidden="true">···</i></button>
 
   <!-- ---- HOME ---- 0016: a readout, not a dashboard. mono values on the
        right, the display face saved for the moment itself. the camera is NOT
        live here — the window opens when you open it. -->
   <div class="core" id="core-app">
-    <p class="home-hd"><span>window</span><span class="stamp" id="stamp"></span></p>
+    <p class="home-hd"><span data-t="home_hd">window</span><span class="stamp" id="stamp"></span></p>
 
     <div class="home-rows">
-      <button class="hrow" id="row-scene"><em>set scene</em><i id="row-scene-v">none</i></button>
-      <button class="hrow" id="row-timer"><em>set timer</em><i id="row-timer-v">15 min</i></button>
-      <button class="hrow" id="row-archive"><em>archive</em><i id="row-archive-v">no windows</i></button>
+      <button class="hrow" id="row-scene"><em data-t="row_scene">set scene</em><i id="row-scene-v" data-t="scene_none">none</i></button>
+      <button class="hrow" id="row-timer"><em data-t="row_timer">set timer</em><i id="row-timer-v">15 min</i></button>
+      <button class="hrow" id="row-archive"><em data-t="row_archive">archive</em><i id="row-archive-v" data-t="no_windows">no windows</i></button>
     </div>
 
-    <button class="home-last hidden" id="btn-lastpic" aria-label="your windows">
+    <button class="home-last hidden" id="btn-lastpic" data-t-aria="aria_your_windows" aria-label="your windows">
       <span class="home-last-frame">
         <img id="lastpic-img" alt="">
         <span class="hl-pane hl-pane-v" aria-hidden="true"></span>
         <span class="hl-pane hl-pane-h" aria-hidden="true"></span>
       </span>
-      <span class="home-last-meta" id="home-last-meta">last window</span>
+      <span class="home-last-meta" id="home-last-meta" data-t="last_window">last window</span>
     </button>
 
     <!-- The shipping app only ever reaches the moment via the shield's deep
          link. That left the prototype with no way in at all — you could not
          take a photo. This is the filming door. -->
-    <button class="btn glass-btn primary open-window" id="btn-open-window">open the window</button>
+    <button class="btn glass-btn primary open-window" id="btn-open-window" data-t="open_window">open the window</button>
 
     <!-- 0017 · the roll of 24. it fills, it never breaks. -->
     <div class="rollbar" id="rollbar" aria-hidden="true"></div>
 
     <!-- the voice meter lives at the foot of home — an input level, never an
          orb. it goes where the mic is. -->
-    <button class="meter idle" id="home-meter" aria-label="arm a scene by voice">
+    <button class="meter idle" id="home-meter" data-t-aria="aria_voice_arm" aria-label="arm a scene by voice">
       <i style="--h:12%"></i><i style="--h:18%"></i><i style="--h:13%"></i><i style="--h:24%"></i><i style="--h:15%"></i><i style="--h:21%"></i><i style="--h:12%"></i><i style="--h:19%"></i><i style="--h:23%"></i><i style="--h:14%"></i><i style="--h:20%"></i><i style="--h:12%"></i>
     </button>
   </div>
 
   <!-- ---- DIRECTOR ---- filming affordance (0002), off by default -->
   <div class="pickbar hidden" id="pickbar">
-    <p class="pickbar-label" id="pickbar-label">director</p>
+    <p class="pickbar-label" id="pickbar-label" data-t="director">director</p>
     <div class="pickbar-chips" id="pickbar-list"></div>
   </div>
 
   <!-- ---- WINDOW ---- instrument: shutter dead centre at the foot, skip
        alongside. no label on the shutter — a camera doesn't caption itself. -->
   <div class="shoot" id="core-window">
-    <button class="shutter" id="btn-capture" aria-label="photo"></button>
-    <button class="shoot-skip glass-btn" id="btn-skip">skip</button>
+    <button class="shutter" id="btn-capture" data-t-aria="aria_photo" aria-label="photo"></button>
+    <button class="shoot-skip glass-btn" id="btn-skip" data-t="skip">skip</button>
   </div>
 
   <!-- ---- after the phrase lands ---- -->
   <div class="after hidden" id="hud-after">
-    <p class="saved-note" id="saved-note">saved · stays on this device</p>
+    <p class="saved-note" id="saved-note" data-t="saved_note">saved · stays on this device</p>
     <!-- 0017 · this was backwards. the loudest button used to send you back to
          the thing you were escaping. only the default flips — 0003 says the
          way out can never be a trap, so "continue" survives, quietly. -->
     <div class="after-row">
-      <button class="btn glass-btn primary" id="btn-done">stay outside</button>
-      <button class="btn glass-btn quiet" id="btn-continue">continue</button>
+      <button class="btn glass-btn primary" id="btn-done" data-t="stay_outside">stay outside</button>
+      <button class="btn glass-btn quiet" id="btn-continue" data-t="continue_plain">continue</button>
     </div>
     <div class="after-row thin">
-      <button class="textbtn" id="btn-share-now">share</button>
-      <button class="textbtn" id="btn-retake">retake</button>
+      <button class="textbtn" id="btn-share-now" data-t="share">share</button>
+      <button class="textbtn" id="btn-retake" data-t="retake">retake</button>
     </div>
   </div>
 
   <!-- 0016 · the instrument bar — one strip of mono readouts at the foot,
        nothing over the shot. gone the instant the frame freezes. -->
   <div class="ibar" id="ibar" aria-hidden="true">
-    <div class="ro"><span>scene</span><b id="ibar-scene">everyday</b></div>
-    <div class="ro right"><span>frame</span><b id="ibar-frame">1 / 24</b></div>
+    <div class="ro"><span data-t="ibar_scene">scene</span><b id="ibar-scene">everyday</b></div>
+    <div class="ro right"><span data-t="ibar_frame">frame</span><b id="ibar-frame">1 / 24</b></div>
   </div>
 
 </div>
@@ -166,12 +184,12 @@
 <!-- ============ SCENES ============ -->
 <section class="panel" id="scenes">
   <header class="page-head">
-    <button class="iconbtn" id="btn-scenes-back" aria-label="back">←</button>
-    <h2>scenes</h2>
+    <button class="iconbtn" id="btn-scenes-back" data-t-aria="aria_back" aria-label="back">←</button>
+    <h2 data-t="scenes">scenes</h2>
   </header>
 
   <div class="voice-box">
-    <button class="mic" id="btn-mic" aria-label="arm a scene by voice">
+    <button class="mic" id="btn-mic" data-t-aria="aria_voice_arm" aria-label="arm a scene by voice">
       <span class="mic-ring"></span>
       <canvas id="mic-wave" aria-hidden="true"></canvas>
       <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -179,24 +197,26 @@
         <path d="M18 11a6 6 0 0 1-12 0M12 17v4" fill="none" stroke-width="1.8"/>
       </svg>
     </button>
-    <p class="voice-prompt" id="voice-prompt">tap and say “i'm going out”</p>
+    <p class="voice-prompt" id="voice-prompt" data-t="voice_prompt">tap and say “i'm going out”</p>
     <p class="voice-heard" id="voice-heard"></p>
   </div>
 
   <div class="scene-list" id="scene-list"></div>
-  <p class="scene-foot">a scene guards your apps until you end it.<br>your photos stay locked until then.</p>
+  <p class="scene-foot" data-t-html="scene_foot">a scene guards your apps until you end it.<br>your photos stay locked until then.</p>
 </section>
 
 <!-- ============ ARCHIVE ============ -->
 <section class="panel" id="archive">
   <header class="page-head">
-    <button class="iconbtn" id="btn-archive-back" aria-label="back">←</button>
-    <h2>your windows</h2>
+    <button class="iconbtn" id="btn-archive-back" data-t-aria="aria_back" aria-label="back">←</button>
+    <h2 data-t="your_windows">your windows</h2>
     <span class="head-streak" id="head-streak"></span>
   </header>
   <div class="locked-note hidden" id="archive-locked">
-    <p class="locked-title">the roll is still in the camera</p>
-    <p class="locked-sub">your <span id="locked-scene">going out</span> photos develop when the scene ends.</p>
+    <p class="locked-title" data-t="roll_in_camera">the roll is still in the camera</p>
+    <!-- the whole line is locale-shaped (the scene name sits mid-sentence in
+         English and after "de" in Spanish), so app.js writes it, not markup -->
+    <p class="locked-sub" id="archive-locked-sub"></p>
   </div>
   <!-- 0016 · the archive is a contact sheet: strips of 3 with sprocket
        margins, frame numbers on the film base, unexposed cells for the roll
@@ -207,20 +227,20 @@
 
 <!-- ============ DEVELOP ============ -->
 <div class="overlay hidden" id="develop">
-  <p class="dev-kicker">developed</p>
+  <p class="dev-kicker" data-t="developed">developed</p>
   <h2 class="dev-title" id="dev-title">the going out roll</h2>
   <!-- frames expose one at a time — the darkroom test-strip method -->
   <div class="dev-strips" id="dev-grid"></div>
   <p class="dev-count" id="dev-count">6 windows</p>
   <div class="row center">
-    <button class="btn glass-btn primary small" id="btn-share-roll">share the roll</button>
-    <button class="textbtn" id="btn-dev-close">done</button>
+    <button class="btn glass-btn primary small" id="btn-share-roll" data-t="share_roll">share the roll</button>
+    <button class="textbtn" id="btn-dev-close" data-t="done">done</button>
   </div>
 </div>
 
 <!-- ============ DETAIL ============ -->
 <div class="overlay hidden" id="detail">
-  <button class="iconbtn close" id="btn-detail-close" aria-label="close">×</button>
+  <button class="iconbtn close" id="btn-detail-close" data-t-aria="aria_close" aria-label="close">×</button>
   <div class="winframe detail-frame">
     <div class="glass">
       <img id="detail-img" alt="">
@@ -231,8 +251,8 @@
   <p class="detail-phrase" id="detail-phrase"></p>
   <p class="detail-meta" id="detail-meta"></p>
   <div class="row center">
-    <button class="btn glass-btn small" id="btn-share">share</button>
-    <button class="textbtn danger" id="btn-delete">delete</button>
+    <button class="btn glass-btn small" id="btn-share" data-t="share">share</button>
+    <button class="textbtn danger" id="btn-delete" data-t="delete_one">delete</button>
   </div>
 </div>
 
@@ -242,59 +262,61 @@
   <div class="sheet-handle"></div>
   <h3 id="arm-title">going out</h3>
   <p class="arm-blurb" id="arm-blurb">for the night</p>
-  <p class="set-label">how long</p>
+  <p class="set-label" data-t="how_long">how long</p>
   <div class="chips" id="arm-duration"></div>
-  <button class="btn glass-btn primary wide" id="btn-arm-go">start the scene</button>
-  <button class="textbtn wide-text" id="btn-arm-cancel">cancel</button>
+  <button class="btn glass-btn primary wide" id="btn-arm-go" data-t="start_scene">start the scene</button>
+  <button class="textbtn wide-text" id="btn-arm-cancel" data-t="cancel">cancel</button>
 </div>
 
 <!-- ============ TIMER SHEET ============ -->
 <div class="sheet-back hidden" id="timer-back"></div>
 <div class="sheet" id="timer-sheet">
   <div class="sheet-handle"></div>
-  <h3>the timer</h3>
-  <p class="arm-blurb">window opens once you've been in an app this long</p>
-  <p class="set-label">minutes</p>
+  <h3 data-t="the_timer">the timer</h3>
+  <p class="arm-blurb" data-t="timer_blurb">window opens once you've been in an app this long</p>
+  <p class="set-label" data-t="minutes">minutes</p>
   <div class="chips" id="timer-chips"></div>
-  <p class="set-hint">the everyday mode. it stays on, quietly, and only steps in once you've actually fallen in.</p>
-  <button class="btn glass-btn primary wide" id="btn-timer-done">done</button>
+  <p class="set-hint" data-t="timer_hint">the everyday mode. it stays on, quietly, and only steps in once you've actually fallen in.</p>
+  <button class="btn glass-btn primary wide" id="btn-timer-done" data-t="done">done</button>
 </div>
 
 <!-- ============ SETTINGS SHEET ============ -->
 <div class="sheet-back hidden" id="sheet-back"></div>
 <div class="sheet" id="settings-sheet">
   <div class="sheet-handle"></div>
-  <h3>settings</h3>
+  <h3 data-t="settings">settings</h3>
 
   <!-- 0016 · grouped readouts: label left, mono value right. rows that hold a
        choice cycle it on tap. restore purchases and terms · privacy are App
        Store table stakes — missing either is an instant rejection. -->
   <div class="set-rows">
-    <p class="grp">plan</p>
+    <p class="grp" data-t="grp_plan">plan</p>
     <div class="hrow static"><em id="set-plan-k">free</em><i id="set-plan-v">—</i></div>
-    <button class="hrow" id="set-restore"><em>restore purchases</em><i id="set-restore-v">›</i></button>
+    <button class="hrow" id="set-restore"><em data-t="restore">restore purchases</em><i id="set-restore-v">›</i></button>
 
-    <p class="grp">the guard</p>
-    <button class="hrow" id="set-watched"><em>watched app</em><i id="set-watched-v">instagram</i></button>
-    <button class="hrow" id="set-threshold"><em>threshold</em><i id="set-threshold-v">15 min</i></button>
+    <p class="grp" data-t="grp_guard">the guard</p>
+    <button class="hrow" id="set-watched"><em data-t="watched_app">watched app</em><i id="set-watched-v">instagram</i></button>
+    <button class="hrow" id="set-threshold"><em data-t="threshold">threshold</em><i id="set-threshold-v">15 min</i></button>
 
-    <p class="grp">the app</p>
-    <div class="hrow static"><em>voice</em><i id="voice-support">—</i></div>
-    <button class="hrow" id="set-panes"><em>panes</em><i id="set-panes-v">fade away</i></button>
-    <button class="hrow" id="set-terms"><em>terms · privacy</em><i>›</i></button>
+    <p class="grp" data-t="grp_app">the app</p>
+    <div class="hrow static"><em data-t="voice">voice</em><i id="voice-support">—</i></div>
+    <button class="hrow" id="set-panes"><em data-t="panes">panes</em><i id="set-panes-v">fade away</i></button>
+    <button class="hrow" id="set-terms"><em data-t="terms">terms · privacy</em><i>›</i></button>
 
-    <p class="grp">filming</p>
-    <button class="hrow" id="set-director"><em>director</em><i id="set-director-v">off</i></button>
-    <button class="hrow" id="set-loop"><em>rehearse</em><i id="set-loop-v">off</i></button>
-    <button class="hrow" id="btn-roll-reset"><em>reset the roll</em><i id="roll-pill">0 / 24</i></button>
-    <button class="hrow" id="btn-clear"><em class="danger">clear all windows</em><i>›</i></button>
+    <p class="grp" data-t="grp_filming">filming</p>
+    <button class="hrow" id="set-director"><em data-t="director">director</em><i id="set-director-v">off</i></button>
+    <button class="hrow" id="set-loop"><em data-t="rehearse">rehearse</em><i id="set-loop-v">off</i></button>
+    <button class="hrow" id="btn-roll-reset"><em data-t="reset_roll">reset the roll</em><i id="roll-pill">0 / 24</i></button>
+    <button class="hrow" id="btn-clear"><em class="danger" data-t="clear_all">clear all windows</em><i>›</i></button>
   </div>
-  <p class="set-hint">director pins one phrase so takes repeat · rehearse loops the moment hands-free. filming rig, not user features.</p>
+  <p class="set-hint" data-t="set_hint">director pins one phrase so takes repeat · rehearse loops the moment hands-free. filming rig, not user features.</p>
 
-  <p class="version">no account · everything stays on this device<br>window · <span id="build-stamp">—</span></p>
+  <p class="version"><span data-t="version_note">no account · everything stays on this device</span><br>ucco · <span id="build-stamp">—</span></p>
 </div>
 
 <script src="js/phrases.js"></script>
+<!-- i18n must follow phrases.js: that file is what resolves window.LOCALE -->
+<script src="js/i18n.js"></script>
 <script src="js/tier.js"></script>
 <script src="js/scenes.js"></script>
 <script src="js/voice.js"></script>

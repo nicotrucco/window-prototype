@@ -26,6 +26,17 @@
       : `${n} window${n === 1 ? "" : "s"}`
   };
 
+  /* 0019 ON TRIAL — the pairing, read at call time like the locale above,
+     because ?type= is flipped mid-session while filming too. The share image
+     must never be set in a face the screen wasn't. */
+  const TYPE = () => document.documentElement.classList.contains("type-times")
+    ? { serif: "'Times New Roman', Times, Georgia, serif",
+        sans:  "'Inter', system-ui, sans-serif",
+        load:  ["italic 500 64px 'Times New Roman'", "500 28px Inter"] }
+    : { serif: "Fraunces, Georgia, serif",
+        sans:  "'Hanken Grotesk', system-ui, sans-serif",
+        load:  ["italic 500 64px Fraunces", "500 28px 'Hanken Grotesk'"] };
+
   const loadImg = src => new Promise((res, rej) => {
     const i = new Image();
     i.onload = () => res(i);
@@ -33,14 +44,11 @@
     i.src = src;
   });
 
-  /* make sure Fraunces is actually rasterised before we draw with it */
+  /* make sure the display face is actually rasterised before we draw with it */
   async function readyFonts() {
     if (!document.fonts) return;
     try {
-      await Promise.all([
-        document.fonts.load("italic 500 64px Fraunces"),
-        document.fonts.load("500 28px 'Hanken Grotesk'")
-      ]);
+      await Promise.all(TYPE().load.map(f => document.fonts.load(f)));
       await document.fonts.ready;
     } catch (e) { /* fall back to serif/sans, still readable */ }
   }
@@ -141,11 +149,11 @@
     ctx.textAlign = "center";
     ctx.fillStyle = "#F6EFDF";
     let size = 60;
-    ctx.font = `italic 500 ${size}px Fraunces, Georgia, serif`;
+    ctx.font = `italic 500 ${size}px ${TYPE().serif}`;
     let lines = wrapLines(ctx, entry.phrase, W * 0.78);
     while (lines.length > 3 && size > 34) {
       size -= 6;
-      ctx.font = `italic 500 ${size}px Fraunces, Georgia, serif`;
+      ctx.font = `italic 500 ${size}px ${TYPE().serif}`;
       lines = wrapLines(ctx, entry.phrase, W * 0.78);
     }
 
@@ -155,7 +163,7 @@
     });
 
     /* wordmark foot */
-    ctx.font = `500 26px 'Hanken Grotesk', system-ui, sans-serif`;
+    ctx.font = `500 26px ${TYPE().sans}`;
     ctx.fillStyle = MUTED;
     ctx.globalAlpha = 0.75;
     const sceneName = entry.scene && entry.scene !== "everyday"
@@ -206,17 +214,17 @@
     /* header */
     ctx.textAlign = "center";
     ctx.fillStyle = "#F6EFDF";
-    ctx.font = `italic 500 54px Fraunces, Georgia, serif`;
+    ctx.font = `italic 500 54px ${TYPE().serif}`;
     const name = window.Scenes.label(sceneKey || "everyday");
     ctx.fillText(T.roll(name), W / 2, Math.max(96, top - 58));
 
     /* foot */
-    ctx.font = `500 27px 'Hanken Grotesk', system-ui, sans-serif`;
+    ctx.font = `500 27px ${TYPE().sans}`;
     ctx.fillStyle = window.Scenes.accent(sceneKey);
     const n = entries.length;
     ctx.fillText(T.count(n), W / 2, H - 108);
 
-    ctx.font = `500 24px 'Hanken Grotesk', system-ui, sans-serif`;
+    ctx.font = `500 24px ${TYPE().sans}`;
     ctx.fillStyle = MUTED;
     ctx.globalAlpha = 0.72;
     ctx.fillText(T.foot(), W / 2, H - 60);

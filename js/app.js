@@ -159,7 +159,7 @@
 
     const shuffle = document.createElement("button");
     shuffle.className = "chip" + (pinned ? "" : " on");
-    shuffle.textContent = "random";
+    shuffle.textContent = UI.t("random");
     shuffle.onclick = () => { pinned = null; renderPickbar(); };
     list.appendChild(shuffle);
 
@@ -172,8 +172,8 @@
     });
 
     $("#pickbar-label").textContent = pinned
-      ? `pinned · ${window.Scenes.label(scene)}`
-      : `director · ${window.Scenes.label(scene)}`;
+      ? UI.f("pinned_scene", window.Scenes.label(scene))
+      : UI.f("director_scene", window.Scenes.label(scene));
   }
 
   /* recent memory is per scene and never larger than half the bank,
@@ -263,7 +263,7 @@
     refreshHud();
   }
 
-  const DAY_NAMES = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+  /* day names moved into the string table — see js/i18n.js */
   function resetCaptureUI() {
     state.captured = false;
     state.lastEntry = null;
@@ -273,7 +273,7 @@
     $("#scrim").classList.remove("show");
     $("#hud-after").classList.add("hidden");
     const now = new Date();
-    $("#stamp").textContent = `${DAY_NAMES[now.getDay()]} · ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    $("#stamp").textContent = `${UI.day(now.getDay())} · ${pad(now.getHours())}:${pad(now.getMinutes())}`;
     renderIBar();
   }
 
@@ -320,8 +320,8 @@
     const r = bumpRoll();
     const shot = r.n === 0 ? ROLL_SIZE : r.n;
     $("#folio").textContent = scene && scene !== "everyday"
-      ? `${window.Scenes.label(scene)} · frame ${shot} of ${ROLL_SIZE}`
-      : `frame ${shot} of ${ROLL_SIZE}`;
+      ? UI.f("folio_scene", window.Scenes.label(scene), shot, ROLL_SIZE)
+      : UI.f("folio", shot, ROLL_SIZE);
     renderRollBar();
     $("#scrim").classList.add("show");
     $("#phrase").classList.add("show");
@@ -340,9 +340,7 @@
     bumpStreak();
 
     /* during a scene the photo is locked away — no lingering */
-    $("#saved-note").textContent = armed
-      ? "locked until your scene ends"
-      : "saved · stays on this device";
+    $("#saved-note").textContent = UI.t(armed ? "locked_note" : "saved_note");
     $("#btn-share-now").classList.toggle("hidden", !!armed);
 
     /* 0017 — "stay outside" is the primary now; the way back stays available
@@ -350,10 +348,10 @@
        is never removed for pressure, only for having nowhere to go. */
     const cont = $("#btn-continue");
     if (settings.app !== "None") {
-      cont.textContent = `continue to ${settings.app.toLowerCase()}`;
+      cont.textContent = UI.f("continue_to", settings.app.toLowerCase());
       cont.classList.remove("hidden");
     } else cont.classList.add("hidden");
-    $("#btn-done").textContent = "stay outside";
+    $("#btn-done").textContent = UI.t("stay_outside");
 
     setTimeout(() => $("#hud-after").classList.remove("hidden"), 1100);
 
@@ -441,10 +439,10 @@
   /* ---------- the HUD ---------- */
   const ago = iso => {
     const m = Math.max(1, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
-    if (m < 60) return `${m}m ago`;
+    if (m < 60) return UI.f("m_ago", m);
     const h = Math.round(m / 60);
-    if (h < 24) return `${h}h ago`;
-    return `${Math.round(h / 24)}d ago`;
+    if (h < 24) return UI.f("h_ago", h);
+    return UI.f("d_ago", Math.round(h / 24));
   };
 
   async function refreshHud() {
@@ -452,20 +450,20 @@
     const armed = window.Scenes.current();
 
     const sceneV = $("#row-scene-v");
-    sceneV.textContent = armed ? window.Scenes.label(armed.scene) : "none";
+    sceneV.textContent = armed ? window.Scenes.label(armed.scene) : UI.t("scene_none");
     sceneV.classList.toggle("accent", !!armed);
-    $("#row-timer-v").textContent = `${settings.timer} min`;
+    $("#row-timer-v").textContent = UI.f("n_min", settings.timer);
 
     const all = (await dbAll()).sort((a, b) => b.id - a.id);
     const visible = armed ? all.filter(e => e.rollId !== armed.rollId) : all;
     $("#row-archive-v").textContent =
-      all.length === 0 ? "no windows" : all.length === 1 ? "1 window" : `${all.length} windows`;
+      all.length === 0 ? UI.t("no_windows") : UI.f("n_windows_count", all.length);
 
     const card = $("#btn-lastpic");
     if (visible.length) {
       card.classList.remove("hidden");
       $("#lastpic-img").src = visible[0].dataUrl;
-      $("#home-last-meta").textContent = `last window · ${ago(visible[0].createdAt)}`;
+      $("#home-last-meta").textContent = UI.f("last_window_ago", ago(visible[0].createdAt));
     } else {
       card.classList.add("hidden");
     }
@@ -525,7 +523,7 @@
       { label: `${s.defaultHours}h`, hours: s.defaultHours },
       { label: "1h", hours: 1 },
       { label: "3h", hours: 3 },
-      { label: "until I turn it off", hours: null }
+      { label: UI.t("until_off"), hours: null }
     ];
     const seen = new Set();
     const uniq = opts.filter(o => {
@@ -567,7 +565,7 @@
   function confirmDisarm() {
     const armed = window.Scenes.current();
     if (!armed) return;
-    if (!confirm(`end your ${window.Scenes.label(armed.scene)} scene?\n\nyour photos will develop now.`)) return;
+    if (!confirm(UI.f("end_scene_confirm", window.Scenes.label(armed.scene)))) return;
     const done = window.Scenes.disarm();
     renderScenes();
     refreshHud();
@@ -611,8 +609,8 @@
     if (!all.length) return;
 
     state.devRoll = { entries: all, scene: roll.scene };
-    $("#dev-title").textContent = `the ${window.Scenes.label(roll.scene)} roll`;
-    $("#dev-count").textContent = `${all.length} window${all.length === 1 ? "" : "s"}`;
+    $("#dev-title").textContent = UI.f("the_roll_of", window.Scenes.label(roll.scene));
+    $("#dev-count").textContent = UI.f("n_windows_count", all.length);
     document.documentElement.style.setProperty("--scene", window.Scenes.accent(roll.scene));
     buildDevStrips(all);
     $("#develop").classList.remove("hidden");
@@ -624,8 +622,8 @@
     if (!entries.length) return;
     const armed = window.Scenes.current();
     state.devRoll = { entries, scene: armed ? armed.scene : "everyday" };
-    $("#dev-title").textContent = `roll no. ${r.raw / ROLL_SIZE}`;
-    $("#dev-count").textContent = `${entries.length} windows`;
+    $("#dev-title").textContent = UI.f("roll_no", r.raw / ROLL_SIZE);
+    $("#dev-count").textContent = UI.f("n_windows_count", entries.length);
     buildDevStrips(entries);
     $("#develop").classList.remove("hidden");
   }
@@ -637,7 +635,10 @@
     const lockedCount = armed ? all.filter(e => e.rollId === armed.rollId).length : 0;
 
     $("#archive-locked").classList.toggle("hidden", !armed || !lockedCount);
-    if (armed) $("#locked-scene").textContent = window.Scenes.label(armed.scene);
+    /* the whole sentence, not the scene name alone — it sits mid-clause in
+       English and after "de" in Spanish */
+    if (armed) $("#archive-locked-sub").textContent =
+      UI.f("roll_locked_sub", window.Scenes.label(armed.scene));
 
     /* 0016 — the archive is a contact sheet, not a grid of thumbnails.
        Strips of three with sprocket margins, frame numbers on the film base,
@@ -707,15 +708,14 @@
     state.justDeveloped = false;
 
     /* the sheet's caption: which roll, how full */
-    $("#af-roll").textContent = `roll no. ${roll.no}`;
+    $("#af-roll").textContent = UI.f("roll_no", roll.no);
     $("#af-count").textContent = `${roll.n} / ${ROLL_SIZE}`;
 
     /* tier line in the header */
     const st = window.Tier.status();
     $("#head-streak").textContent =
-      st === "trial" ? `${window.Tier.trialDaysLeft()} days of everything`
-      : st === "window-plus" ? (getStreak() ? `${getStreak()} day streak` : "")
-      : (getStreak() ? `${getStreak()} day streak` : "");
+      st === "trial" ? UI.f("plan_trial_left", window.Tier.trialDaysLeft())
+      : (getStreak() ? UI.f("streak", getStreak()) : "");
 
     openPanel("archive");
   }
@@ -729,7 +729,7 @@
        cells are too small to carry it, but the loss still has to be visible */
     const fade = window.Tier.expiryLabel(e);
     $("#detail-meta").textContent =
-      `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()} · ${window.Scenes.label(e.scene || "everyday")} · ${e.bucket}`
+      `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()} · ${window.Scenes.label(e.scene || "everyday")} · ${UI.bucket(e.bucket)}`
       + (fade ? ` · ${fade}` : "");
     $("#detail").classList.remove("hidden");
   }
@@ -778,9 +778,8 @@
     micLive(false);
     mic.classList.toggle("dead", !window.Voice.supported());
     $("#voice-heard").textContent = "";
-    $("#voice-prompt").textContent = window.Voice.supported()
-      ? "tap and say “i'm going out”"
-      : "voice needs safari or chrome — tap a scene below";
+    $("#voice-prompt").textContent =
+      UI.t(window.Voice.supported() ? "voice_prompt" : "voice_unsupported");
   }
 
   function startVoice() {
@@ -795,17 +794,17 @@
           $("#voice-prompt").textContent = `${window.Scenes.label(scene)} —`;
           setTimeout(() => openArmSheet(scene), 420);
         } else if (isFinal && transcript) {
-          $("#voice-prompt").textContent = "didn't catch a scene — try again";
+          $("#voice-prompt").textContent = UI.t("voice_nomatch");
         }
       },
       (st, msg) => {
         if (st === "listening") {
           micLive(true);
-          $("#voice-prompt").textContent = "listening…";
+          $("#voice-prompt").textContent = UI.t("voice_listening");
           $("#voice-heard").textContent = "";
         } else {
           micLive(false);
-          if (st === "error") $("#voice-prompt").textContent = msg || "try again";
+          if (st === "error") $("#voice-prompt").textContent = msg || UI.t("retry");
         }
       }
     );
@@ -818,7 +817,7 @@
     TIMER_OPTIONS.forEach(m => {
       const b = document.createElement("button");
       b.className = "chip" + (m === settings.timer ? " on" : "");
-      b.textContent = `${m} min`;
+      b.textContent = UI.f("n_min", m);
       b.onclick = () => {
         settings.timer = m; saveSettings();
         [...box.children].forEach(c => c.classList.remove("on"));
@@ -842,26 +841,26 @@
     /* plan — stated as fact. StoreKit ties the purchase to the Apple ID, so
        there is no account and nothing to sign into. */
     const st = window.Tier.status();
-    $("#set-plan-k").textContent = st === "window-plus" ? "window+" : st === "trial" ? "free trial" : "free";
+    $("#set-plan-k").textContent = UI.t(st === "window-plus" ? "plan_plus" : st === "trial" ? "plan_trial" : "plan_free");
     $("#set-plan-v").textContent =
-      st === "window-plus" ? "active"
-      : st === "trial" ? `${window.Tier.trialDaysLeft()} days of everything`
-      : "trial ended";
+      st === "window-plus" ? UI.t("plan_active")
+      : st === "trial" ? UI.f("plan_trial_left", window.Tier.trialDaysLeft())
+      : UI.t("plan_trial_over");
 
     /* the guard */
-    $("#set-watched-v").textContent = settings.app === "None" ? "none" : settings.app.toLowerCase();
-    $("#set-threshold-v").textContent = `${settings.timer} min`;
+    $("#set-watched-v").textContent = settings.app === "None" ? UI.t("scene_none") : settings.app.toLowerCase();
+    $("#set-threshold-v").textContent = UI.f("n_min", settings.timer);
 
     /* the app */
-    $("#voice-support").textContent = window.Voice.supported() ? "browser" : "unsupported here";
-    $("#set-panes-v").textContent = settings.panes === "fade" ? "fade away" : "keep them";
+    $("#voice-support").textContent = UI.t(window.Voice.supported() ? "voice_browser" : "voice_none");
+    $("#set-panes-v").textContent = UI.t(settings.panes === "fade" ? "panes_fade" : "panes_keep");
 
     /* filming */
     const dv = $("#set-director-v");
-    dv.textContent = settings.director ? "on" : "off";
+    dv.textContent = UI.t(settings.director ? "on" : "off");
     dv.classList.toggle("accent", !!settings.director);
     const lv = $("#set-loop-v");
-    lv.textContent = settings.loop ? "loop" : "off";
+    lv.textContent = UI.t(settings.loop ? "loop" : "off");
     lv.classList.toggle("accent", !!settings.loop);
 
     renderRollBar();
@@ -929,7 +928,7 @@
   /* prototype: StoreKit isn't here, but the row must be (App Store law) */
   $("#set-restore").onclick = () => {
     const v = $("#set-restore-v");
-    v.textContent = "nothing to restore";
+    v.textContent = UI.t("nothing_restore");
     setTimeout(() => { v.textContent = "›"; }, 1800);
   };
 
@@ -962,7 +961,7 @@
 
   $("#sheet-back").onclick = closeSettings;
   $("#btn-clear").onclick = async () => {
-    if (confirm("delete every window? this can't be undone.")) {
+    if (confirm(UI.t("clear_confirm"))) {
       await dbClear(); refreshHud(); closeSettings();
     }
   };
@@ -1001,6 +1000,11 @@
       location.reload();
     });
   }
+
+  /* Fill every data-t in the markup from the string table BEFORE the first
+     paint of real state. The English in index.html is the fallback if this file
+     ever fails to load, not the source of truth. */
+  UI.dress();
 
   setMode(readMode());
   paintScene();

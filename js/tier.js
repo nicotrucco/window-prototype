@@ -55,11 +55,11 @@
     const ms = expiresIn(entry);
     if (ms === null) return null;
     const days = Math.floor(ms / DAY);
-    if (days >= 3) return `fades in ${days} days`;
-    if (days >= 1) return days === 1 ? "fades tomorrow" : `fades in ${days} days`;
+    if (days >= 3) return window.UI.f("fades_days", days);
+    if (days >= 1) return days === 1 ? window.UI.t("fades_tomorrow") : window.UI.f("fades_days", days);
     const hrs = Math.floor(ms / 3600000);
-    if (hrs >= 1) return `fades in ${hrs}h`;
-    return "fades within the hour";
+    if (hrs >= 1) return window.UI.f("fades_hours", hrs);
+    return window.UI.t("fades_hour");
   }
   /* is this one close enough to hurt? drives the warm/urgent styling */
   const isFading = entry => {

@@ -751,19 +751,34 @@ window.PHRASES_ES = {
 
    PHRASE_BANKS is the shape a third locale slots into. window.PHRASES stays
    the single resolved bank every caller already reads, so nothing downstream
-   had to change. */
+   had to change.
+
+   ?lang= now STICKS. The device was the wrong authority for filming: an
+   English-set iPhone opening the app from its home-screen icon carries no query
+   string, so it fell back to English on every launch and there was no way to
+   hold it in Spanish. Passing ?lang=es once now remembers it, which is the
+   difference between a URL habit and a reliable shoot. The device is still the
+   default for a phone that has never been told otherwise — that part is
+   correct for shipping and hasn't changed. */
 window.PHRASE_BANKS = { en: window.PHRASES_EN, es: window.PHRASES_ES };
 
 window.LOCALE = (function () {
+  const KEY = "ucco-locale";
+  const valid = v => v === "en" || v === "es";
   try {
     const q = new URLSearchParams(location.search).get("lang");
-    if (q === "en" || q === "es") return q;
-  } catch (e) { /* no URLSearchParams, fall through to the device */ }
+    if (valid(q)) {
+      try { localStorage.setItem(KEY, q); } catch (e) { /* private mode — still honour it for this session */ }
+      return q;
+    }
+    const held = localStorage.getItem(KEY);
+    if (valid(held)) return held;
+  } catch (e) { /* no URLSearchParams or no storage — fall through to the device */ }
   return (navigator.language || "en").toLowerCase().indexOf("es") === 0 ? "es" : "en";
 })();
 
 window.PHRASES = window.PHRASE_BANKS[window.LOCALE] || window.PHRASES_EN;
-document.documentElement.lang = window.LOCALE;
+document.documentElement.lang = window.LOCALE === "es" ? "es-CL" : "en";
 
 /* voice inherited by a custom scene, or fallback for an unknown key */
 window.FALLBACK_SCENE = "everyday";
